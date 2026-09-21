@@ -170,6 +170,7 @@ const APPROVED_ROUTE='Amazon Brand Registry > Report a Violation > Other Issues'
 /* v5.2 controls from Final Proposal §6: weekly approved list, precision auto-pause, Monday auto-sync */
 const SETTINGS_V52={approvedAsins:[],approvedWeekOf:'',precisionFloor:40,submissionsPaused:false,pauseReason:'',autoSyncMondays:true};
 const AMAZON_RESPONSES={pending:'Awaiting Amazon response',insufficient_info:'Amazon asked for more information',declined:'Declined — review stays up',removed:'Removed — review taken down'};
+const BUILTIN_POLICY_IDS=['POL-PERSONAL','POL-PROMO','POL-SELLER'];
 const KNOWN_BRANDS=['SLEEP SANCTUARY','BAMBOO RESERVE','SLEEPHORIA','DECOLURE','COOLINENS'];
 const today=()=>new Date().toISOString().slice(0,10);
 const now=()=>new Date().toISOString();
@@ -381,6 +382,19 @@ function classifyReview(r){
   else if(seller){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=seller[0];rationale='Content is explicitly about seller service, not the product.';confidence=82}
   else if(shipping){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=shipping[0];rationale='Fulfillment/shipping content detected — eligibility depends on current route.';confidence=64}
 
+  if(!hit){
+    const lower=text.toLowerCase();
+    for(const p of applicable.filter(x=>!BUILTIN_POLICY_IDS.includes(x.id))){
+      const kw=(p.keywords||[]).find(k=>k&&lower.includes(k.toLowerCase()));
+      if(!kw)continue;
+      const at=lower.indexOf(kw.toLowerCase());
+      const start=Math.max(...['.','!','?'].map(ch=>text.lastIndexOf(ch,at)))+1;
+      const ends=['.','!','?'].map(ch=>text.indexOf(ch,at+kw.length)).filter(i=>i>=0);
+      hit=p;evidence=text.slice(start,ends.length?Math.min(...ends):text.length).trim();confidence=70;
+      rationale=`Matched detection keyword "${kw}" from the ${p.heading} policy — manual policies always go to HOLD for human review.`;
+      break;
+    }
+  }
   if(!hit){return {verdict:'not_eligible',policyId:'',confidence:productOnly?95:60,evidence:productOnly?productOnly[0]:firstSentence(r.text),rationale:productOnly?'Product-experience content only. No removable-policy signal present.':'No policy signal was matched to the applicable marketplace-scoped register.',blockedBy:''}}
 
   policyId=hit.id;
@@ -882,6 +896,7 @@ function openPolicyForm(existing=null){
       <div class="field"><label>Status</label><select name="status"><option value="active" ${p.status!=='inactive'?'selected':''}>Active</option><option value="inactive" ${p.status==='inactive'?'selected':''}>Inactive</option></select></div>
       <div class="field full"><label>Exact policy heading *</label><input name="heading" required value="${esc(p.heading||'')}"></div>
       <div class="field full"><label>Marketplaces this policy applies to *</label><div class="checklist">${mpChecks}</div></div>
+      <div class="field full"><label>Detection keywords (comma-separated — any match maps the review to this policy as HOLD)</label><input name="keywords" value="${esc((p.keywords||[]).join(', '))}" placeholder="counterfeit, fake product, not authentic"></div>
       <div class="field full"><label>Detection guidance *</label><textarea name="guidance" required>${esc(p.guidance||'')}</textarea></div>
       <div class="field full"><label>Exclusions (what is NOT a case)</label><textarea name="exclusions" placeholder="Mixed content · product-primary · Amazon-owned URL · brand mention">${esc(p.exclusions||'')}</textarea></div>
       <div class="field full"><label>Official Amazon source URL *</label><input name="url" type="url" required value="${esc(p.url||'')}"></div>
@@ -898,7 +913,7 @@ function openPolicyForm(existing=null){
     if(!data.id||!data.heading||!data.guidance||!data.url||!data.lastChecked||!data.owner){toast('Complete every required field');return}
     if(!mps.length){toast('Select at least one marketplace');return}
     if(!/^https:\/\/(www\.)?(amazon\.com|amazon\.ca|amazon\.com\.mx|amazon\.com\.br|sellercentral\.amazon\.com)\//i.test(data.url)){toast('Use an official Amazon or Seller Central URL');return}
-    data.marketplaces=mps;data.route=APPROVED_ROUTE;data.exclusionKeywords=String(data.exclusionKeywords||'').split(',').map(x=>x.trim()).filter(Boolean);
+    data.marketplaces=mps;data.route=APPROVED_ROUTE;data.keywords=String(data.keywords||'').split(',').map(x=>x.trim()).filter(Boolean);data.exclusionKeywords=String(data.exclusionKeywords||'').split(',').map(x=>x.trim()).filter(Boolean);
     if(existing){const before=JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces});Object.assign(existing,data);logAudit('policy',existing.id,'Policy updated','user',before,JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces}))}
     else{if(state.policies.some(x=>x.id===data.id)){toast('Policy ID already exists');return}state.policies.push(data);logAudit('policy',data.id,'Policy added','user','',data.heading)}
     saveState();closeModal();toast('Policy register updated');

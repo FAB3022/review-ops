@@ -85,5 +85,17 @@ ok(al.rate.includes('"pct":100'),'§6.3 success rate computed');
 ok(al.pausedPrecision.startsWith('true Precision below 40%'),'§8 auto-pause on precision two weeks running');ok(al.blockedWhilePaused==='ready','submission blocked while paused');
 ok(al.pausedBreach.startsWith('true Protected ASIN breach'),'§8 auto-pause on protected ASIN breach');ok(al.resumeBtn&&al.sortSel,'resume control and priority sort render');
 
+// manual policy added on the Policies page maps reviews by detection keywords (HOLD only)
+const mp=await p.evaluate(()=>{state.protectedAsins=state.protectedAsins.filter(x=>x.asin!=='B0TESTTEST');state.policies.forEach(x=>x.lastChecked=today());
+ openPolicyForm();const f=$('#policyForm');f.id.value='POL-COUNTERFEIT';f.heading.value='Counterfeit claims without evidence';f.querySelector('input[name="marketplaces"][value="US"]').checked=true;f.keywords.value='counterfeit, fake product';f.guidance.value='Unsupported counterfeit claims';f.exclusions.value='Seller confirmed issue';f.exclusionKeywords.value='seller confirmed';f.url.value='https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF';$('#savePolicy').click();
+ const pol=policyById('POL-COUNTERFEIT');
+ const mk=(t)=>{const r={id:nextReviewId(),asin:'B0TESTTEST',brand:'DECOLURE',marketplace:'US',rating:1,title:'Bad',text:t,reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(r);analyzeReview(r);return r};
+ const a=mk('Arrived fine. This is clearly a fake product and I want my money back!');const b=mk('Honestly a counterfeit item, the seller confirmed it.');
+ return {saved:Boolean(pol)&&pol.keywords.join('|'),verdict:a.verdict,policy:a.classification?.policyId,evidence:a.classification?.evidence,excl:b.block_reason}});
+console.log(JSON.stringify(mp));
+ok(mp.saved==='counterfeit|fake product','manual policy saved with detection keywords');
+ok(mp.verdict==='hold'&&mp.policy==='POL-COUNTERFEIT'&&mp.evidence==='This is clearly a fake product and I want my money back','manual policy maps review to HOLD with verbatim evidence');
+ok(mp.excl==='EXCLUSION_MATCH','manual policy exclusion keywords block');
+
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
