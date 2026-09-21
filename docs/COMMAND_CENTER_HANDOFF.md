@@ -8,7 +8,7 @@
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 41 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 52 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -58,20 +58,28 @@ If there is no review ID but the link matches `/customer-reviews\/(R[A-Z0-9]{8,}
 Default verdict is **NOT ELIGIBLE**. Text = `title + " " + text`.
 
 1. **Rating 4–5 → NOT ELIGIBLE**, never a candidate.
-2. The first matching rule wins:
+2. The first matching detector in `DETECTORS` wins. There is one policy per Amazon Community Guidelines category:
 
-| Signal | Policy | Confidence | Pattern (summary; exact regexes in `classifyReview`) |
-|---|---|---|---|
-| Email or phone | `POL-PERSONAL` | 94 | email; phone must be a real 3-3-4 format (dates and order IDs excluded) |
-| External link or promotion | `POL-PROMO` | 88 | non-Amazon URL; `use code X` where X has a digit; "cheaper version from"; "visit our website/store"; "buy it from <domain>" |
-| Seller service | `POL-SELLER` | 82 | "seller refused", "customer service never replied", … |
-| Shipping or fulfilment | `POL-SELLER` | 64 | "arrived late", "box was crushed", "wrong size/colour sent", "received the wrong", "never arrived" |
-| Manually added policy | that policy | 70 | any of the policy's `keywords` (evidence = the sentence containing it) |
+| Order | Policy | Category | Confidence | Mixed check | What it matches |
+|---|---|---|---|---|---|
+| 1 | `POL-PERSONAL` | Personal information | 94 / 90 | no | email; real 3-3-4 phone (dates and order IDs excluded); street address |
+| 2 | `POL-OFFENSIVE` | Profanity, harassment and offensive content | 90 | no | profanity list |
+| 3 | `POL-INCENTIVE` | Incentivized reviews and conflicts of interest | 86 | no | "in exchange for an honest review", "received it free for", "I work for a competitor"; exclusion keyword `vine` |
+| 4 | `POL-PROMO` | Promotional content and external links | 88 | no | non-Amazon URL; `use code X` (X has a digit); "cheaper version from"; "visit our store"; "buy it from <domain>" |
+| 5 | `POL-PRICING` | Pricing and availability | 84 | yes | price elsewhere, price changes, "out of stock", "on sale for $X" (value comments such as "not worth the price" are not matched) |
+| 6 | `POL-PROMO` | (other brands / stores) | 74 | yes | "buy X instead", "better sheets from Walmart", "other brands are better" |
+| 7 | `POL-SELLER` | Seller and order feedback | 82 | yes | seller or customer-service failures, refund delays or denials, can't contact the seller |
+| 8 | `POL-SELLER` | (fulfilment) | 82 | yes | never arrived, wrong size/colour sent, "ordered X but received Y", used or opened item, lost package, late delivery |
+| 9 | `POL-SELLER` | (missing items) | 72 | yes | missing pieces or pillowcases (may be a product issue, so always HOLD) |
+| 10 | `POL-OFFTOPIC` | Content not about the product | 80 | yes | Amazon's service, returns or refunds; delivery carrier; review of a different product |
+| 11 | `POL-REPETITIVE` | Repetitive text and spam | 85 | no | repeated symbols or words, no letters at all, same text on another ASIN |
+| — | any policy | manual keywords | 70 | yes | the policy's `keywords` (evidence = the containing sentence) |
 
-3. **Verdict:** confidence ≥ 80 → `clear_violation`; otherwise → `hold`. A seller-policy match where the product is the main subject → `hold`. **Manually added policies always land as `hold`.**
+3. **Verdict:** confidence ≥ 80 and no mixed content → `clear_violation`; otherwise → `hold`. **Mixed content** = the review, minus the matched phrase, also discusses the product (`PRODUCT_TALK`: fabric, fit, colour, soft, thin, stitching, tear, wash, …). Keyword matches always land as `hold`.
+   **Safeguard:** never match a review alleging that *our* team offered an incentive to change or remove a review. Reporting it would draw Amazon's attention to our own conduct.
 4. Store `{policyId, confidence, evidence, rationale}` on the review. The verdict is **separate** from workflow state; nothing advances automatically.
 
-**Do not loosen these rules without re-running the baseline (§6).** The previous looser version flagged 13 reviews on the Master File, and all 13 were false positives.
+**Do not loosen these rules without re-running the baseline (§6).** An earlier looser version flagged 13 reviews on the Master File, all false positives (4–5★ praise, our own packaging discount card, a date read as a phone number).
 
 ### 2.4 Human validation
 Five checks are required, plus the validator's name: source confirmed, exact quote present, live policy checked, not product-experience only, exclusions considered. Only `clear_violation` or `hold` can be validated.
@@ -86,13 +94,13 @@ Five checks are required, plus the validator's name: source confirmed, exact quo
 Built only from stored facts. 150 words maximum (save refused above that). The evidence quote is locked (save refused if it's removed).
 ```
 ASIN / Marketplace / Review ID / Review link
-Policy: <heading>
-Policy scope: <policy.guidance>
+Community Guidelines category: <heading>
+Guideline basis: <policy.caseStatement>
 Reference: <policy.url>
-Exact text from the review: "<evidence>"
-We are asking Amazon to check this review against the <heading> policy. We are not
-disputing the customer's opinion of the product. Please make the final determination
-under the policy currently in effect; no outcome is assumed.
+Text in the review: "<evidence>"
+We request that Amazon review this content against the <heading> section of the
+Community Guidelines and remove it if it does not comply. We are not disputing the
+customer's opinion of the product.
 ```
 The route is a constant: `Amazon Brand Registry > Report a Violation > Other Issues` (not editable).
 
@@ -118,14 +126,14 @@ The route is a constant: `Amazon Brand Registry > Report a Violation > Other Iss
 |---|---|
 | `reviews` | id, reviewId (Amazon), sourceRef, asin, brand, marketplace, rating, title, text, reviewDate, reviewer, collectedAt, sourceRemoved, workflow_state (`new/screened/blocked/routed/validated/approved/drafted`), verdict, block_reason, block_detail, classification{policyId, category, confidence, evidence, rationale, at}, validation{5 checks, notes, by, at}, approvals{ab, brandManager: {by, at, decision, notes}}, updatedAt |
 | `cases` | id, reviewId (FK), status (`ready/submitted/monitoring/closed`), draft, route, submitter, amazonReference, submittedAt, **recordedAt**, nextReviewAt, followUpCount, amazonResponse, outcome, closedAt, createdAt, updatedAt |
-| `policies` | id, heading, marketplaces[], guidance, **keywords[]**, exclusions, **exclusionKeywords[]**, url (Amazon or Seller Central only), lastChecked, owner, status, route (constant) |
+| `policies` | id, heading, marketplaces[], guidance, **caseStatement**, **keywords[]**, exclusions, **exclusionKeywords[]**, url (Amazon or Seller Central only), lastChecked, owner, status, route (constant) |
 | `protected_asins` | asin, parent, brand, marketplace (`US/CA/MX/BR/ALL`), reason, owner, protectedFrom, releaseDate, status, lastChecked |
 | `asin_catalog` | brand, parent, child, sku, marketplace, productName. Source: Master File SKU LIST (brand taken from the product-name prefix) |
 | `owners` | role (AB / Brand Manager / Submitter), name, brands[], marketplaces[] → map to user accounts |
 | `settings` | weeklyCap, observationDays, followUpMax, stalenessDays (30), marketplaces[], approvedAsins[], approvedWeekOf, precisionFloor (40), submissionsPaused, pauseReason, notificationChannel |
 | `audit_log` | id, at, entityType, entityId, event, actor, before, after, comment. **Append-only. No delete path** (the reference app's "factory reset" must not exist in production) |
 
-Seed data (3 policies, 3 SLEEPHORIA protected ASINs, owners) is at the top of the `<script>` in `index.html`.
+Seed data (8 Community Guidelines policies with `caseStatement` wording, 3 SLEEPHORIA protected ASINs, owners) is at the top of the `<script>` in `index.html`.
 
 ---
 
@@ -150,8 +158,8 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (41) to the Command Center test suite.
-2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 0 CLEAR, 5 HOLD (all fulfilment errors), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
+1. Port `qa/regression.js` scenarios (52) to the Command Center test suite.
+2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 6 CLEAR (all seller/order feedback), 26 HOLD (19 seller/order, 4 promotional, 2 not about the product, 1 pricing), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
 ## 7. Open items
