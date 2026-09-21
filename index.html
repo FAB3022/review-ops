@@ -170,7 +170,8 @@ const APPROVED_ROUTE='Amazon Brand Registry > Report a Violation > Other Issues'
 /* v5.2 controls from Final Proposal §6: weekly approved list, precision auto-pause, Monday auto-sync */
 const SETTINGS_V52={approvedAsins:[],approvedWeekOf:'',precisionFloor:40,submissionsPaused:false,pauseReason:'',autoSyncMondays:true};
 const AMAZON_RESPONSES={pending:'Awaiting Amazon response',insufficient_info:'Amazon asked for more information',declined:'Declined — review stays up',removed:'Removed — review taken down'};
-const BUILTIN_POLICY_IDS=['POL-PERSONAL','POL-PROMO','POL-SELLER'];
+const BUILTIN_POLICY_IDS=['POL-PERSONAL','POL-OFFENSIVE','POL-INCENTIVE','POL-PROMO','POL-PRICING','POL-SELLER','POL-OFFTOPIC','POL-REPETITIVE'];
+const OLD_SEED_HEADINGS=['Personal information','Promotional content','Seller, order, or shipping feedback'];
 const KNOWN_BRANDS=['SLEEP SANCTUARY','BAMBOO RESERVE','SLEEPHORIA','DECOLURE','COOLINENS'];
 const today=()=>new Date().toISOString().slice(0,10);
 const now=()=>new Date().toISOString();
@@ -194,11 +195,19 @@ const BLOCK_REASONS={MISSING_DATA:'Missing required data',REVIEW_REMOVED:'Review
 const MARKETPLACES_ALL=['US','CA','MX','BR'];
 
 /* ── seeds ─────────────────────────────────────────────────────────── */
+const CG_URL='https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF';
+const ALL_MP=['US','CA','MX','BR'];
+/* One entry per Amazon Community Guidelines category. caseStatement is the plain-language basis used in case drafts. */
 const seedPolicies=[
-  {id:'POL-PERSONAL',heading:'Personal information',guidance:'Email addresses, phone numbers, physical addresses, or other personal contact details in the review text.',exclusions:'Mentions of the buyer being contacted by the seller (that is a seller-service complaint, not personal information).',keywords:['email address','contact me at','phone number','@'],exclusionKeywords:['seller contacted me','seller emailed me','seller called me','they contacted me','reached out to me','they emailed me','they called me'],url:'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE},
-  {id:'POL-PROMO',heading:'Promotional content',guidance:'External purchase links, advertisements, discount codes, solicitation, or redirection to another seller or website.',exclusions:'Mentions of Amazon-owned URLs; brand mentions without a purchase link.',keywords:['buy from','discount code','use code','http://','https://','.com/','.test/'],exclusionKeywords:['amazon.com','amazon.ca','amazon.com.mx','amazon.com.br','amzn.to','amzn.com','a.co/'],url:'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE},
-  {id:'POL-SELLER',heading:'Seller, order, or shipping feedback',guidance:'Content focused on the seller, refund, order service, fulfillment, packaging, or shipping instead of the product itself.',exclusions:'Mixed content where the product itself is the primary subject; product quality complaints alongside a shipping mention.',keywords:['seller','refund','delivery','shipping','arrived late','box was','never replied','order service'],exclusionKeywords:[],url:'https://sellercentral.amazon.com/gp/help/external/G201972140',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE}
-];
+  {id:'POL-PERSONAL',heading:'Personal information',guidance:'Reviews may not include personal or private information such as email addresses, phone numbers or physical addresses.',caseStatement:"Amazon's Community Guidelines do not allow personal information such as phone numbers, email addresses or physical addresses in customer reviews. The quoted text contains personal contact information.",exclusions:'The buyer describing being contacted by the seller is order feedback, not personal information.',keywords:[],exclusionKeywords:['seller contacted me','seller emailed me','seller called me','they contacted me','reached out to me','they emailed me','they called me']},
+  {id:'POL-OFFENSIVE',heading:'Profanity, harassment and offensive content',guidance:'Reviews may not contain profanity, obscenity, harassment, threats or hateful content.',caseStatement:"Amazon's Community Guidelines do not allow profanity, obscene or abusive language in customer reviews. The quoted text contains language of this kind.",exclusions:'Strong but non-profane criticism of the product is allowed.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-INCENTIVE',heading:'Incentivized reviews and conflicts of interest',guidance:'Reviews may not be written in exchange for payment, free or discounted products, or by someone with a financial interest in the product or a competing product. Amazon Vine reviews are allowed.',caseStatement:"Amazon's Community Guidelines do not allow reviews written in exchange for compensation or by someone with a competing or financial interest. The quoted text shows the review was written under an incentive or by someone with such an interest.",exclusions:'Amazon Vine reviews. Never report a review alleging that our own team offered an incentive to change or remove a review.',keywords:[],exclusionKeywords:['vine']},
+  {id:'POL-PROMO',heading:'Promotional content and external links',guidance:'Reviews may not contain advertising, promotional material, discount codes, links to external websites, or content directing customers to other sellers, stores or brands.',caseStatement:"Amazon's Community Guidelines do not allow promotional content, external links, or content directing customers to other sellers, stores or products in customer reviews. The quoted text does this.",exclusions:'Amazon-owned links; a customer mentioning the discount card included in our own packaging.',keywords:[],exclusionKeywords:['amazon.com','amazon.ca','amazon.com.mx','amazon.com.br','amzn.to','amzn.com','a.co/']},
+  {id:'POL-PRICING',heading:'Pricing and availability',guidance:'Comments on price are allowed only when they relate to the product’s value. Comments about price changes, stock availability or prices at other stores are not allowed.',caseStatement:"Amazon's Community Guidelines allow comments on price only where they relate to the product's value; comments about price changes, availability or prices elsewhere are not allowed. The quoted text is a comment of this kind.",exclusions:'Value statements such as "not worth the price" or "good for the price".',keywords:[],exclusionKeywords:[]},
+  {id:'POL-SELLER',heading:'Seller and order feedback',guidance:'Product reviews must be about the product. Feedback about the seller, customer service, refunds, returns, shipping, delivery or packaging belongs in seller feedback.',caseStatement:"Amazon's Community Guidelines state that customer reviews should be about the product, and that feedback about the seller, order, shipping, packaging or returns belongs in Seller Feedback. The quoted text is feedback about the order rather than the product.",exclusions:'Mixed content where the product itself is also reviewed goes to HOLD for a person to judge.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-OFFTOPIC',heading:'Content not about the product',guidance:'Reviews must relate to the product. Content about Amazon’s own services, delivery carriers, a different product or unrelated experiences is not allowed.',caseStatement:"Amazon's Community Guidelines require customer reviews to be about the product itself. The quoted text concerns a delivery, platform or unrelated matter rather than this product.",exclusions:'Mixed content where the product itself is also reviewed goes to HOLD for a person to judge.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-REPETITIVE',heading:'Repetitive text and spam',guidance:'Reviews may not contain repetitive text, spam, symbols used as pictures, or the same content posted across several reviews.',caseStatement:"Amazon's Community Guidelines do not allow repetitive text, spam or duplicated content in customer reviews. The quoted text is of this kind.",exclusions:'Short genuine reviews are not spam.',keywords:[],exclusionKeywords:[]}
+].map(x=>({...x,url:CG_URL,marketplaces:ALL_MP,lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE}));
 
 const seedProtected=[
   {asin:'B0FTSVDG77',parent:'B0FTSVDG77',brand:'SLEEPHORIA',marketplace:'US',reason:'Launch-candidate — cooling pillowcase line',owner:'AB',protectedFrom:today(),releaseDate:'',status:'active',lastChecked:today()},
@@ -284,7 +293,14 @@ function loadState(){
 }
 /* v5.2 upgrade for browsers holding v5.0 data: lock the route, add exclusion keywords, restamp version */
 function migrateState(s){
-  s.policies.forEach(p=>{p.route=APPROVED_ROUTE;if(!Array.isArray(p.exclusionKeywords))p.exclusionKeywords=seedPolicies.find(x=>x.id===p.id)?.exclusionKeywords||[]});
+  s.policies.forEach(p=>{
+    p.route=APPROVED_ROUTE;
+    const seed=seedPolicies.find(x=>x.id===p.id);
+    if(seed&&OLD_SEED_HEADINGS.includes(p.heading)&&p.heading!==seed.heading||seed&&!p.caseStatement){Object.assign(p,{heading:seed.heading,guidance:seed.guidance,caseStatement:seed.caseStatement,exclusions:seed.exclusions,url:seed.url,keywords:[],marketplaces:[...new Set([...(p.marketplaces||[]),...seed.marketplaces])]})}
+    if(!Array.isArray(p.exclusionKeywords))p.exclusionKeywords=seed?.exclusionKeywords||[];
+    if(!Array.isArray(p.keywords))p.keywords=[];
+  });
+  seedPolicies.forEach(seed=>{if(!s.policies.some(p=>p.id===seed.id))s.policies.push(structuredClone(seed))});
   s.cases.forEach(c=>{c.route=APPROVED_ROUTE});
   s.sheetSyncs.forEach(c=>{if(c.id==='SYNC-SKU')c.name='Master File — SKU LIST'});
   s.settings={...SETTINGS_V52,...s.settings};
@@ -365,43 +381,61 @@ function screenReview(r){
   return {blocked:false};
 }
 
+/* Detectors in priority order. mixed:true → HOLD when the rest of the review also discusses the product. */
+const STORES='(?:walmart|target|costco|ikea|kohl\'?s|macy\'?s|temu|ebay|wayfair|marshalls|tj ?maxx|home ?goods|bed bath(?: (?:&|and) beyond)?|sam\'?s club|aliexpress|shein)';
+const DETECTORS=[
+  {policy:'POL-PERSONAL',confidence:94,mixed:false,why:'Email address in review text.',test:t=>t.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)},
+  {policy:'POL-PERSONAL',confidence:94,mixed:false,why:'Phone number in review text.',test:t=>t.match(/(?<![\d-])(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?![\d-])/)},
+  {policy:'POL-PERSONAL',confidence:90,mixed:false,why:'Street address in review text.',test:t=>t.match(/\b\d{2,5}\s+(?:[A-Z][a-z]+\s){1,3}(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|court|ct|crescent|cres)\b/)},
+  {policy:'POL-OFFENSIVE',confidence:90,mixed:false,why:'Profanity or abusive language.',test:t=>t.match(/\b(?:fuck\w*|f\*+k\w*|shit\w*|sh\*t\w*|bullshit|bitch\w*|asshole\w*|bastard\w*|dickhead\w*|motherf\w*|cunt\w*|whore\w*|piss(?:ed)? off)\b/i)},
+  {policy:'POL-INCENTIVE',confidence:86,mixed:false,why:'Reviewer states an incentive or a competing interest.',test:t=>t.match(/in exchange for (?:an? |my )?(?:honest |unbiased )?review|(?:received|got) (?:this|it|these|them) (?:for )?free (?:for|in exchange)|(?:paid|compensated) (?:me )?(?:to|for) (?:write|leave|post)|i (?:work|worked) for (?:a |the )?compet\w*|i (?:sell|make|manufacture) (?:a )?(?:similar|competing)/i)},
+  {policy:'POL-PROMO',confidence:88,mixed:false,why:'External link in review text.',test:t=>t.match(/(?:https?:\/\/|www\.|[a-z0-9-]+\.(?:com|net|org|test|shop|store|co)\/)[^\s]*/i)},
+  {policy:'POL-PROMO',confidence:88,mixed:false,why:'Promotional code or redirection to another store.',test:t=>t.match(new RegExp("use (?:my |the |this |discount |promo |coupon )?code:?\\s+(?=[A-Z]*\\d)[A-Z0-9]{4,}|cheaper (?:version|one) (?:from|at|on)|visit (?:our|my) (?:website|store|shop)|buy (?:it|this|them|one) (?:from|at|on) (?!amazon)\\S+\\.(?:com|net|shop|store|co)\\b",'i'))},
+  {policy:'POL-PRICING',confidence:84,mixed:true,why:'Comment on price change, availability or price elsewhere.',test:t=>t.match(new RegExp("(?:found|bought|got|saw) (?:it|this|them|these|the same)[^.!?]{0,40}(?:cheaper|for less|\\$\\d+ less|lower)[^.!?]{0,30}(?:at|on|from|elsewhere)|(?:cheaper|less expensive|lower price) (?:at|on|from) (?:"+STORES.slice(3,-1)+"|another (?:store|site|seller)|other (?:stores|sites|sellers)|my local)|price (?:went up|increased|jumped|was raised|doubled)|(?:raised|jacked up|hiked) the price|out of stock|price gouging|(?:on sale|bought (?:it|them) on sale) for \\$?\\d+|(?:at|for) the (?:higher|regular|full|new) price",'i'))},
+  {policy:'POL-PROMO',confidence:74,mixed:true,why:'Directs customers to another brand or store.',test:t=>t.match(new RegExp("(?:buy|get|go with|went with|bought|switched to|stick with|try) (?:the |a )?[\\w&'-]+(?: [\\w&'-]+)? (?:brand |ones? )?instead|(?:better|cheaper|nicer) (?:ones?|sheets?|options?|quality) (?:at|from) "+STORES+"|(?:shop|buy|get them) (?:at|from) "+STORES+"|(?:better|nicer|cheaper|softer)[^.!?]{0,40}(?:from|at) "+STORES+"|(?:other|different|another) brands? (?:are|is|were|was)? ?(?:much |way |far )?(?:better|nicer|softer|cheaper)|try (?:a |another )?different brand",'i'))},
+  {policy:'POL-SELLER',confidence:82,mixed:true,why:'Feedback about the seller, customer service, refund or return.',test:t=>t.match(/seller refused|customer service never replied|never replied to my order|seller service|the seller (?:never|didn'?t|did not|won'?t|refused|ignored)|customer service (?:was|is) (?:terrible|awful|horrible|rude|useless|non-?existent|a joke)|no (?:reply|response) from (?:the )?(?:seller|company)|(?:refund|return) (?:process|was denied|request was)|still (?:waiting|haven'?t received) (?:for )?(?:my|a) (?:refund|replacement)|never (?:got|received) (?:my|a) (?:refund|replacement)|refund (?:has been|was|is) (?:delayed|denied|refused)|(?:delayed|denied|refused) (?:my |the )?refund|(?:contact|reach|get a hold of|get ahold of) (?:the )?(?:seller|customer service|company)[^.!?]{0,40}(?:no luck|no response|no reply|no way|can'?t|won'?t let)|no way to contact (?:the )?(?:seller|company)|won'?t let me contact|(?:reached out|emailed|contacted)[^.!?]{0,40}(?:with no|but no|and no|never heard) (?:response|reply|answer)/i)},
+  {policy:'POL-SELLER',confidence:82,mixed:true,why:'Feedback about shipping, delivery, packaging or a fulfilment error.',test:t=>t.match(/arrived late|delivery was|shipping was|box was crushed|packaging was damaged|wrong (?:size|item|colou?r|product) (?:was )?(?:sent|shipped|delivered)|(?:sent|shipped) (?:me )?the wrong|received the wrong|never (?:arrived|received it)|arrived (?:damaged|broken|open|opened|torn|wet|used)|(?:box|package|packaging) (?:was|arrived|came) (?:damaged|crushed|open|opened|torn|ripped|wet)|delivered to the wrong|sent [\w/ ]{1,25} when i ordered|ordered (?:a |the )?\w+(?:[ /]\w+)? (?:and|but) (?:received|got)|what (?:i|we) received was|package was lost|had to be re-?shipped|(?:did|do)n'?t (?:send|arrive|deliver)[^.!?]{0,20}on time|used (?:sheets?|items?|product)[^.!?]{0,40}(?:box|return|previous)|previous owner|(?:were|was) (?:these|this|they|it) (?:new or used|used or new)|open(?:ed)? packag\w* (?:and )?no box/i)},
+  {policy:'POL-SELLER',confidence:72,mixed:true,why:'Missing items in the order — may be a packing error or a product issue.',test:t=>t.match(/missing (?:pieces?|items?|parts?|pillow ?cases?)|(?:only|just) (?:received|got) (?:one|1|two|2|three|3|half)|my (?:two|2|missing) (?:missing )?pillow ?cases/i)},
+  {policy:'POL-OFFTOPIC',confidence:80,mixed:true,why:'About Amazon services, the carrier or a different product rather than this product.',test:t=>t.match(/amazon(?:'s)? (?:customer service|support|delivery|driver|return policy|refunded|prime|warehouse)|delivery driver|(?:ups|fedex|usps|canada post|purolator) (?:lost|left|damaged|threw|delivered)|(?:this|my) review is (?:for|about) (?:a )?different|wrong (?:listing|product page)|meant to (?:review|post)|posted (?:this )?(?:on|to) the wrong|amazon (?:wasn'?t|was not|won'?t|refused|didn'?t|did not)[^.!?]{0,40}(?:refund|replace|return|help)|(?:no|n'?t (?:seem to )?be a) place (?:on|in) this site/i)},
+  {policy:'POL-REPETITIVE',confidence:85,mixed:false,why:'Repetitive text, symbols only, or text duplicated in another review.',test:(t,r)=>t.match(/([^\s\w])\1{7,}|(\b\w+\b)(?:\W+\2\b){4,}/i)||(!/[a-z]/i.test(r.text||'')&&String(r.text||'').trim().length>3?{index:0,0:t}:null)||((r.text||'').trim().length>=40&&state.reviews.some(x=>x.id!==r.id&&x.asin!==r.asin&&(x.text||'').trim().toLowerCase()===(r.text||'').trim().toLowerCase())?{index:t.indexOf((r.text||'').trim()),0:(r.text||'').trim()}:null)}
+];
+const PRODUCT_TALK=/\b(?:fabric|material|fit|fits|soft|softer|thin|thick|colou?r|quality|comfortable|comfort|wrinkl\w*|pill(?:s|ing|ed)?|stitch\w*|ripped|rips|tear|tore|hot|cool(?:ing)?|feel|feels|stain\w*|fad(?:e|ed|es)|shr[iu]nk\w*|smell\w*|seams?|elastic|pocket\w*|slippery|scratchy|itchy|breathable|durable|washed|wash)\b/i;
+function sentenceAround(text,at,len){
+  const start=Math.max(...['.','!','?','\n'].map(ch=>text.lastIndexOf(ch,at-1)))+1;
+  const ends=['.','!','?','\n'].map(ch=>text.indexOf(ch,at+len)).filter(i=>i>=0);
+  return text.slice(start,ends.length?Math.min(...ends):text.length).trim();
+}
 function classifyReview(r){
   const text=`${r.title||''} ${r.text||''}`;
   const applicable=state.policies.filter(p=>p.status==='active'&&isPolicyFresh(p)&&(p.marketplaces||[]).includes(r.marketplace));
-  const email=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  const phone=text.match(/(?<![\d-])(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?![\d-])/);
-  const url=text.match(/(?:https?:\/\/|www\.|[a-z0-9-]+\.(?:com|net|org|test|shop)\/)[^\s]*/i);
-  const promo=text.match(/(?:use (?:my |the |this |discount |promo |coupon )?code:?\s+(?=[A-Z]*\d)[A-Z0-9]{4,}|cheaper (?:version|one) (?:from|at|on)|visit (?:our|my) (?:website|store|shop)|buy (?:it|this|them|one) (?:from|at|on) (?!amazon)\S+\.(?:com|net|shop|store|co)\b)[^.!?]*/i);
-  const seller=text.match(/(?:seller refused|customer service never replied|never replied to my order|seller service)[^.!?]*/i);
-  const shipping=text.match(/(?:arrived late|delivery was|shipping was|box was crushed|packaging was damaged|wrong (?:size|item|colou?r|product) (?:was )?(?:sent|shipped|delivered)|(?:sent|shipped) (?:me )?the wrong|received the wrong|never (?:arrived|received it))[^.!?]*/i);
   const productOnly=text.match(/(?:stopped working|feels cheaper|fit is poor|fabric feels|quality was)[^.!?]*/i);
-
-  let hit=null,verdict='not_eligible',confidence=0,evidence='',rationale='',policyId='';
+  let hit=null,verdict='not_eligible',confidence=0,evidence='',rationale='',policyId='',mixedCheck=false,matched='';
   if(Number(r.rating)>=4)return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'Rated 4–5 stars — not a removal target.',blockedBy:''};
-  if(email||phone){hit=applicable.find(p=>p.id==='POL-PERSONAL');evidence=(email||phone)[0];rationale='Personal contact detail detected in review text.';confidence=94}
-  else if(url||promo){hit=applicable.find(p=>p.id==='POL-PROMO');evidence=(url||promo)[0];rationale='External purchase link, discount code, or redirection detected.';confidence=88}
-  else if(seller){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=seller[0];rationale='Content is explicitly about seller service, not the product.';confidence=82}
-  else if(shipping){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=shipping[0];rationale='Fulfillment/shipping content detected — eligibility depends on current route.';confidence=64}
-
+  for(const d of DETECTORS){
+    const m=d.test(text,r);if(!m)continue;
+    const p=applicable.find(x=>x.id===d.policy);if(!p)continue;
+    hit=p;confidence=d.confidence;mixedCheck=d.mixed;rationale=d.why;matched=m[0];
+    evidence=sentenceAround(text,m.index,m[0].length);
+    break;
+  }
   if(!hit){
     const lower=text.toLowerCase();
-    for(const p of applicable.filter(x=>!BUILTIN_POLICY_IDS.includes(x.id))){
+    for(const p of applicable){
       const kw=(p.keywords||[]).find(k=>k&&lower.includes(k.toLowerCase()));
       if(!kw)continue;
       const at=lower.indexOf(kw.toLowerCase());
       const start=Math.max(...['.','!','?'].map(ch=>text.lastIndexOf(ch,at)))+1;
       const ends=['.','!','?'].map(ch=>text.indexOf(ch,at+kw.length)).filter(i=>i>=0);
-      hit=p;evidence=text.slice(start,ends.length?Math.min(...ends):text.length).trim();confidence=70;
-      rationale=`Matched detection keyword "${kw}" from the ${p.heading} policy — manual policies always go to HOLD for human review.`;
+      hit=p;evidence=text.slice(start,ends.length?Math.min(...ends):text.length).trim();confidence=70;mixedCheck=true;matched=kw;
+      rationale=`Matched detection keyword "${kw}" from the ${p.heading} policy — keyword matches always go to HOLD for human review.`;
       break;
     }
   }
   if(!hit){return {verdict:'not_eligible',policyId:'',confidence:productOnly?95:60,evidence:productOnly?productOnly[0]:firstSentence(r.text),rationale:productOnly?'Product-experience content only. No removable-policy signal present.':'No policy signal was matched to the applicable marketplace-scoped register.',blockedBy:''}}
 
   policyId=hit.id;
-  const exclusionText=(hit.exclusions||'').toLowerCase();
-  const productMentioned=/(product|sheets?|pillowcase|comforter|fitted|fabric|color|colour|design)/i.test(text)&&hit.id==='POL-SELLER'&&/(product|sheets?|fabric|design|feels|quality)/i.test(text.slice(0,140));
-  if(productMentioned&&exclusionText.includes('mixed content')){verdict='hold';rationale+=' Mixed-content flag: product itself is mentioned — validator must confirm the primary subject.'}
+  const mixed=mixedCheck&&PRODUCT_TALK.test(text.replace(matched||evidence,' '));
+  if(mixed){verdict='hold';rationale+=' Mixed content: the review also discusses the product — a person must confirm the violation is the main point.'}
   else if(confidence>=80){verdict='clear_violation'}
   else{verdict='hold';rationale+=' Confidence below threshold — human review required.'}
   return {verdict,policyId,confidence,evidence,rationale,blockedBy:''};
@@ -778,14 +812,14 @@ function caseDraft(r,p){
     `Review ID: ${r.reviewId||'Not captured - add it from the review link before submitting'}`,
     ...(r.sourceRef?[`Review link: ${r.sourceRef}`]:[]),
     '',
-    `Policy: ${p.heading}`,
-    `Policy scope: ${p.guidance}`,
+    `Community Guidelines category: ${p.heading}`,
+    `Guideline basis: ${p.caseStatement||p.guidance}`,
     ...(p.url?[`Reference: ${p.url}`]:[]),
     '',
-    'Exact text from the review:',
+    'Text in the review:',
     `"${r.classification.evidence}"`,
     '',
-    `We are asking Amazon to check this review against the ${p.heading} policy. We are not disputing the customer's opinion of the product. Please make the final determination under the policy currently in effect; no outcome is assumed.`
+    `We request that Amazon review this content against the ${p.heading} section of the Community Guidelines and remove it if it does not comply. We are not disputing the customer's opinion of the product.`
   ];
   return lines.join('\n');
 }
@@ -902,6 +936,7 @@ function openPolicyForm(existing=null){
       <div class="field full"><label>Exact policy heading *</label><input name="heading" required value="${esc(p.heading||'')}"></div>
       <div class="field full"><label>Marketplaces this policy applies to *</label><div class="checklist">${mpChecks}</div></div>
       <div class="field full"><label>Detection keywords (comma-separated — any match maps the review to this policy as HOLD)</label><input name="keywords" value="${esc((p.keywords||[]).join(', '))}" placeholder="counterfeit, fake product, not authentic"></div>
+      <div class="field full"><label>Case wording — guideline basis (used in every case draft for this policy)</label><textarea name="caseStatement" placeholder="Amazon's Community Guidelines do not allow … The quoted text …">${esc(p.caseStatement||'')}</textarea></div>
       <div class="field full"><label>Detection guidance *</label><textarea name="guidance" required>${esc(p.guidance||'')}</textarea></div>
       <div class="field full"><label>Exclusions (what is NOT a case)</label><textarea name="exclusions" placeholder="Mixed content · product-primary · Amazon-owned URL · brand mention">${esc(p.exclusions||'')}</textarea></div>
       <div class="field full"><label>Official Amazon source URL *</label><input name="url" type="url" required value="${esc(p.url||'')}"></div>

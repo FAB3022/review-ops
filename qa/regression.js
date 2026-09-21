@@ -113,7 +113,37 @@ ok(fp.buyAgain==='not_eligible'&&fp.wontBuy==='not_eligible','"buy from them aga
 ok(fp.insertCard==='not_eligible','mention of our own discount card is not promotional content');
 ok(fp.date==='not_eligible'&&fp.orderId==='not_eligible','dates and order numbers are not phone numbers');
 ok(fp.realPhone!=='not_eligible'&&fp.realCode!=='not_eligible','real phone numbers and codes still detected');
-ok(fp.wrongSize==='hold','wrong item sent goes to HOLD');ok(fp.words<=150,'improved case draft stays within 150 words: '+fp.words);
+ok(fp.wrongSize==='clear_violation','order-only wrong item sent → CLEAR (seller and order feedback)');ok(fp.words<=150,'improved case draft stays within 150 words: '+fp.words);
+
+// Community Guidelines categories (8 policies) — positives, safeguards and mixed-content handling
+const cg=await p.evaluate(()=>{state.policies.forEach(x=>x.lastChecked=today());const v=(rating,text)=>{const c=classifyReview({id:'X',asin:'B0CG',rating,title:'',text,marketplace:'US'});return c.verdict+':'+(c.policyId||'-')};
+ return {count:state.policies.filter(x=>BUILTIN_POLICY_IDS.includes(x.id)).length,
+  profanity:v(1,'These are shit.'),
+  incentive:v(2,'I received these for free in exchange for an honest review.'),
+  vine:v(2,'Vine review: I received these free in exchange for an honest review.'),
+  sellerAskedChange:v(1,'The seller offered me a refund if I changed my review.'),
+  pricingElsewhere:v(2,'Found the same set cheaper at Walmart.'),
+  pricingValue:v(2,'Not worth the price at all.'),
+  otherBrand:v(2,'Other brands are much better. The fabric pilled.'),
+  offtopic:v(1,'Amazon refused to refund me.'),
+  repetitiveSym:v(1,'!!!!!!!!!!!!'),
+  shortOk:v(3,'It’s ok.'),
+  orderOnly:v(1,'Item never arrived.'),
+  orderMixed:v(2,'Two pillow cases had a large tear and there is no way to contact the company.'),
+  missing:v(2,'Missing pieces, only received two pillow cases.'),
+  draft:caseDraft({asin:'B0X',marketplace:'US',reviewId:'R1ABCDEFGH',classification:{evidence:'Item never arrived'}},policyById('POL-SELLER')),draftWords:wordCount(caseDraft({asin:'B0X',marketplace:'US',reviewId:'R1ABCDEFGH',classification:{evidence:'Item never arrived'}},policyById('POL-SELLER')))}});
+console.log(JSON.stringify(cg));
+ok(cg.count===8,'8 Community Guidelines policies in the register');
+ok(cg.profanity==='clear_violation:POL-OFFENSIVE','profanity → CLEAR');
+ok(cg.incentive==='clear_violation:POL-INCENTIVE','incentivized review → CLEAR');
+ok(cg.vine.startsWith('clear_violation:POL-INCENTIVE'),'vine text still classified (the exclusion gate blocks it after classification)');
+ok(cg.sellerAskedChange.startsWith('not_eligible'),'SAFEGUARD: review alleging we offered an incentive is never flagged');
+ok(cg.pricingElsewhere.endsWith('POL-PRICING')&&cg.pricingValue.startsWith('not_eligible'),'price elsewhere flagged, value comment not');
+ok(cg.otherBrand==='hold:POL-PROMO','other brand recommendation with product talk → HOLD');
+ok(cg.offtopic==='clear_violation:POL-OFFTOPIC','Amazon service complaint → CLEAR');
+ok(cg.repetitiveSym==='clear_violation:POL-REPETITIVE'&&cg.shortOk.startsWith('not_eligible'),'symbol spam flagged, short genuine review not');
+ok(cg.orderOnly==='clear_violation:POL-SELLER'&&cg.orderMixed==='hold:POL-SELLER'&&cg.missing==='hold:POL-SELLER','order-only CLEAR, mixed and missing-pieces HOLD');
+ok(/Community Guidelines category: Seller and order feedback/.test(cg.draft)&&/Guideline basis: Amazon's Community Guidelines state/.test(cg.draft)&&cg.draftWords<=150,'draft uses guideline category and basis, ≤150 words');
 
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
