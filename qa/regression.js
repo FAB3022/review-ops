@@ -97,5 +97,23 @@ ok(mp.saved==='counterfeit|fake product','manual policy saved with detection key
 ok(mp.verdict==='hold'&&mp.policy==='POL-COUNTERFEIT'&&mp.evidence==='This is clearly a fake product and I want my money back','manual policy maps review to HOLD with verbatim evidence');
 ok(mp.excl==='EXCLUSION_MATCH','manual policy exclusion keywords block');
 
+// false positives found on the live Master File (21 Sep) must stay NOT ELIGIBLE; fulfilment errors go to HOLD
+const fp=await p.evaluate(()=>{const v=(rating,text)=>classifyReview({rating,title:'',text,marketplace:'US'});
+ return {buyAgain:v(5,'I would buy from this brand again in a heart beat.').verdict,
+  wontBuy:v(3,"Won't buy from them again. The sheet was thin.").verdict,
+  insertCard:v(2,'The discount code card inside the box did not work on Amazon.').verdict,
+  date:v(1,'Order received 2025-12-19 and it ripped.').verdict,
+  orderId:v(1,'Order 112-3456789-1234567 ripped after one wash.').verdict,
+  realPhone:v(1,'Call me on 416-555-0199 about this.').verdict,
+  realCode:v(1,'Use code SAVE20 at my shop instead.').verdict,
+  wrongSize:v(2,'Wrong size sent. I ordered Full and got King.').verdict,
+  words:wordCount(caseDraft({asin:'B0X',marketplace:'US',reviewId:'R1ABCDEFGH',sourceRef:'https://www.amazon.com/gp/customer-reviews/R1ABCDEFGH',classification:{evidence:'Wrong size sent'}},state.policies.find(x=>x.id==='POL-SELLER')))}});
+console.log(JSON.stringify(fp));
+ok(fp.buyAgain==='not_eligible'&&fp.wontBuy==='not_eligible','"buy from them again" is not promotional content');
+ok(fp.insertCard==='not_eligible','mention of our own discount card is not promotional content');
+ok(fp.date==='not_eligible'&&fp.orderId==='not_eligible','dates and order numbers are not phone numbers');
+ok(fp.realPhone!=='not_eligible'&&fp.realCode!=='not_eligible','real phone numbers and codes still detected');
+ok(fp.wrongSize==='hold','wrong item sent goes to HOLD');ok(fp.words<=150,'improved case draft stays within 150 words: '+fp.words);
+
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();

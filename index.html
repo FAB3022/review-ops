@@ -369,14 +369,15 @@ function classifyReview(r){
   const text=`${r.title||''} ${r.text||''}`;
   const applicable=state.policies.filter(p=>p.status==='active'&&isPolicyFresh(p)&&(p.marketplaces||[]).includes(r.marketplace));
   const email=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  const phone=text.match(/(?:\+?\d[\s().-]*){8,}/);
+  const phone=text.match(/(?<![\d-])(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}(?![\d-])/);
   const url=text.match(/(?:https?:\/\/|www\.|[a-z0-9-]+\.(?:com|net|org|test|shop)\/)[^\s]*/i);
-  const promo=text.match(/(?:buy from|discount code|cheaper version|visit our|use code|use discount)[^.!?]*/i);
+  const promo=text.match(/(?:use (?:my |the |this |discount |promo |coupon )?code:?\s+(?=[A-Z]*\d)[A-Z0-9]{4,}|cheaper (?:version|one) (?:from|at|on)|visit (?:our|my) (?:website|store|shop)|buy (?:it|this|them|one) (?:from|at|on) (?!amazon)\S+\.(?:com|net|shop|store|co)\b)[^.!?]*/i);
   const seller=text.match(/(?:seller refused|customer service never replied|never replied to my order|seller service)[^.!?]*/i);
-  const shipping=text.match(/(?:arrived late|delivery was|shipping was|box was crushed|packaging was damaged)[^.!?]*/i);
+  const shipping=text.match(/(?:arrived late|delivery was|shipping was|box was crushed|packaging was damaged|wrong (?:size|item|colou?r|product) (?:was )?(?:sent|shipped|delivered)|(?:sent|shipped) (?:me )?the wrong|received the wrong|never (?:arrived|received it))[^.!?]*/i);
   const productOnly=text.match(/(?:stopped working|feels cheaper|fit is poor|fabric feels|quality was)[^.!?]*/i);
 
   let hit=null,verdict='not_eligible',confidence=0,evidence='',rationale='',policyId='';
+  if(Number(r.rating)>=4)return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'Rated 4–5 stars — not a removal target.',blockedBy:''};
   if(email||phone){hit=applicable.find(p=>p.id==='POL-PERSONAL');evidence=(email||phone)[0];rationale='Personal contact detail detected in review text.';confidence=94}
   else if(url||promo){hit=applicable.find(p=>p.id==='POL-PROMO');evidence=(url||promo)[0];rationale='External purchase link, discount code, or redirection detected.';confidence=88}
   else if(seller){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=seller[0];rationale='Content is explicitly about seller service, not the product.';confidence=82}
@@ -770,19 +771,23 @@ function generateCase(r){
 }
 
 function caseDraft(r,p){
-  const body=`ASIN: ${r.asin}
-Marketplace: ${r.marketplace}
-Review ID: ${r.reviewId||'Not provided'}
-
-Requested action
-Please review the identified customer review against the current ${p.heading} policy.
-
-Exact evidence
-"${r.classification.evidence}"
-
-Request
-Please make the final enforcement determination under the policy currently in effect. No outcome is assumed or guaranteed.`;
-  return body;
+  /* Built only from recorded facts: the review, the policy register entry and the locked quote. No claims are added. */
+  const lines=[
+    `ASIN: ${r.asin}`,
+    `Marketplace: ${r.marketplace}`,
+    `Review ID: ${r.reviewId||'Not captured - add it from the review link before submitting'}`,
+    ...(r.sourceRef?[`Review link: ${r.sourceRef}`]:[]),
+    '',
+    `Policy: ${p.heading}`,
+    `Policy scope: ${p.guidance}`,
+    ...(p.url?[`Reference: ${p.url}`]:[]),
+    '',
+    'Exact text from the review:',
+    `"${r.classification.evidence}"`,
+    '',
+    `We are asking Amazon to check this review against the ${p.heading} policy. We are not disputing the customer's opinion of the product. Please make the final determination under the policy currently in effect; no outcome is assumed.`
+  ];
+  return lines.join('\n');
 }
 
 function confirmDeleteReview(r){openModal('Delete review record','This removes the review and any linked case from this browser.',`<p>Delete <b>${esc(r.id)}</b> for ASIN <b>${esc(r.asin)}</b>?</p>`,`<button class="btn secondary" id="cancelDelete">Cancel</button><button class="btn danger" id="confirmDelete">Delete</button>`);$('#cancelDelete').onclick=closeModal;$('#confirmDelete').onclick=()=>{state.cases=state.cases.filter(c=>c.reviewId!==r.id);state.reviews=state.reviews.filter(x=>x.id!==r.id);selectedReviews.delete(r.id);logAudit('review',r.id,'Deleted','user',r.workflow_state,'','');saveState();closeModal();closeDrawer();toast('Review and linked case deleted')}}
