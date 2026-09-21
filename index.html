@@ -78,6 +78,7 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
               <input id="reviewSearch" type="search" placeholder="Search text, ASIN, brand, ID…">
               <select id="reviewStatusFilter"><option value="all">All workflow states</option><option value="new">New</option><option value="screened">Screened</option><option value="blocked">Blocked</option><option value="routed">Routed (non-removal)</option><option value="validated">Validated</option><option value="approved">Approved</option><option value="drafted">Drafted</option></select>
               <select id="reviewVerdictFilter"><option value="all">All verdicts</option><option value="clear_violation">CLEAR POLICY VIOLATION</option><option value="hold">HOLD</option><option value="not_eligible">NOT ELIGIBLE</option><option value="unclassified">Unclassified</option></select>
+              <select id="reviewSort"><option value="priority">Priority first</option><option value="updated">Recently updated</option></select>
               <select id="reviewBrandFilter"><option value="all">All brands</option></select>
               <select id="reviewMarketplaceFilter"><option value="all">All marketplaces</option></select>
             </div>
@@ -122,7 +123,7 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
 
         <section class="view" id="view-implementation">
           <div class="implementation-grid">
-            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.1)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>Marketplace-scoped policies with exclusions</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, 1 follow-up</li><li>Append-only audit log with CSV export</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
+            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.1)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>Marketplace-scoped policies with exclusions</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, 1 follow-up</li><li>Audit log with CSV export</li><li>Weekly approved-for-filing ASIN list (§6.1)</li><li>Priority score and priority-first queue (§6.2)</li><li>30-day success rate by policy and brand, auto-pause on stop conditions (§6.3, §8)</li><li>Monday auto-sync from the Master File (§6.4)</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
             <div class="card"><div class="card-head"><div><h2>Production connections</h2><p>Required for a shared live system</p></div><span class="tag warning">Not connected</span></div><ol class="connection-list"><li><b>Approved review source</b><span>Connect Helium10 review-insights CSV export, Brand Registry email alerts (Gmail Apps Script parser), or scheduled file delivery.</span></li><li><b>Shared database</b><span>Replace browser storage with controlled, multi-user records and backups.</span></li><li><b>User identity</b><span>Map AB, brand managers, submitters, and audit permissions to real accounts.</span></li><li><b>Notification channel</b><span>Send approval and overdue-monitoring alerts to the approved workspace.</span></li><li><b>Seller Central handoff</b><span>Keep final submission manual until Amazon authorizes a supported integration.</span></li></ol></div>
           </div>
           <div class="card roadmap-card"><div class="card-head"><div><h2>Controlled rollout</h2><p>Progress only after the prior phase passes its acceptance check.</p></div></div><div class="roadmap"><article><small>Phase 0</small><h3>Validate</h3><p>Policy register, protected ASINs, schema, test set, roles, and no submissions.</p><b>Exit: agreed logic</b></article><article><small>Phase 1</small><h3>Pilot</h3><p>Two approvals, maximum three submissions weekly, one follow-up per case.</p><b>Exit: acceptable precision</b></article><article><small>Phase 2</small><h3>Expand</h3><p>Add brands gradually and measure outcomes and false positives.</p><b>Exit: stable controls</b></article><article><small>Phase 3</small><h3>Operate</h3><p>Formal SOP, training, access review, and policy-change audits.</p><b>Exit: operational ownership</b></article></div></div>
@@ -166,6 +167,9 @@ const $$=(s,p=document)=>[...p.querySelectorAll(s)];
 const STORAGE_KEY='amazonReviewOps.v5';
 const APP_VERSION='v5.2';
 const APPROVED_ROUTE='Amazon Brand Registry > Report a Violation > Other Issues';
+/* v5.2 controls from Final Proposal §6: weekly approved list, precision auto-pause, Monday auto-sync */
+const SETTINGS_V52={approvedAsins:[],approvedWeekOf:'',precisionFloor:40,submissionsPaused:false,pauseReason:'',autoSyncMondays:true};
+const AMAZON_RESPONSES={pending:'Awaiting Amazon response',insufficient_info:'Amazon asked for more information',declined:'Declined — review stays up',removed:'Removed — review taken down'};
 const KNOWN_BRANDS=['SLEEP SANCTUARY','BAMBOO RESERVE','SLEEPHORIA','DECOLURE','COOLINENS'];
 const today=()=>new Date().toISOString().slice(0,10);
 const now=()=>new Date().toISOString();
@@ -270,6 +274,7 @@ function loadState(){
       stalenessDays:30,
       marketplaces:['US'],
       notificationChannel:'',
+      ...SETTINGS_V52,
       scriptVersion:APP_VERSION,
       proposalApproved:false
     },
@@ -281,6 +286,7 @@ function migrateState(s){
   s.policies.forEach(p=>{p.route=APPROVED_ROUTE;if(!Array.isArray(p.exclusionKeywords))p.exclusionKeywords=seedPolicies.find(x=>x.id===p.id)?.exclusionKeywords||[]});
   s.cases.forEach(c=>{c.route=APPROVED_ROUTE});
   s.sheetSyncs.forEach(c=>{if(c.id==='SYNC-SKU')c.name='Master File — SKU LIST'});
+  s.settings={...SETTINGS_V52,...s.settings};
   s.settings.scriptVersion=APP_VERSION;
   return s;
 }
@@ -306,6 +312,35 @@ function isProtected(asin,marketplace){
     if(parentOfAsin&&(x.asin===parentOfAsin||x.parent===parentOfAsin))return true;
     return false;
   });
+}
+function isApprovedForFiling(r){
+  const list=state.settings.approvedAsins||[];if(!list.length)return true;
+  const parent=state.asinCatalog.find(a=>a.child===r.asin)?.parent;
+  return list.includes(r.asin)||Boolean(parent&&list.includes(parent));
+}
+/* §6.2 priority = confidence 45% · recency 25% · star impact 20% · same-ASIN candidate density 10% */
+function priorityScore(r){
+  if(!r.classification||!['clear_violation','hold'].includes(r.verdict))return null;
+  const recency=Math.max(0,100-daysSince(r.reviewDate)*100/90);
+  const star=(5-Number(r.rating||5))/4*100;
+  const peers=state.reviews.filter(x=>x.id!==r.id&&x.asin===r.asin&&['clear_violation','hold'].includes(x.verdict)).length;
+  return Math.round(.45*r.classification.confidence+.25*recency+.2*star+.1*Math.min(100,peers*25));
+}
+/* §6.3 success rate over closed cases: removed ÷ (removed + declined) */
+function successRate(cases){const done=cases.filter(c=>c.status==='closed'&&['removed','declined'].includes(c.amazonResponse));return done.length?{pct:Math.round(done.filter(c=>c.amazonResponse==='removed').length*100/done.length),n:done.length}:null}
+function closedBetween(fromDays,toDays){return state.cases.filter(c=>c.closedAt&&daysSince(c.closedAt)>=fromDays&&daysSince(c.closedAt)<toDays)}
+function pauseSubmissions(reason,actor='system'){
+  if(state.settings.submissionsPaused)return;
+  state.settings.submissionsPaused=true;state.settings.pauseReason=reason;
+  logAudit('settings','pause','Submissions paused (stop condition)',actor,'active','paused',reason);
+  toast(`Submissions paused: ${reason}`);
+}
+/* §8 stop conditions the app can detect itself */
+function checkStopConditions(){
+  const breach=state.cases.find(c=>{if(c.status==='closed')return false;const r=state.reviews.find(x=>x.id===c.reviewId);return r&&isProtected(r.asin,r.marketplace)});
+  if(breach){pauseSubmissions(`Protected ASIN breach on ${breach.id}`);return}
+  const floor=state.settings.precisionFloor,wk1=successRate(closedBetween(0,7)),wk2=successRate(closedBetween(7,14));
+  if(wk1&&wk2&&wk1.pct<floor&&wk2.pct<floor)pauseSubmissions(`Precision below ${floor}% two weeks running (${wk2.pct}% then ${wk1.pct}%)`);
 }
 function priorCaseFor(reviewIdText,selfId=''){return state.cases.find(c=>{if(c.reviewId===selfId)return false;const r=state.reviews.find(x=>x.id===c.reviewId);return r?.reviewId&&r.reviewId===reviewIdText})}
 function duplicateOf(item,ignoreId=''){return state.reviews.find(r=>r.id!==ignoreId&&((item.reviewId&&r.reviewId===item.reviewId)||(item.sourceRef&&r.sourceRef===item.sourceRef)||(r.asin===item.asin&&r.marketplace===item.marketplace&&r.text.trim().toLowerCase()===item.text.trim().toLowerCase())))}
@@ -434,6 +469,11 @@ function renderPilotControls(){
     ['Follow-up cap',`${state.settings.followUpMax} per case`],
     ['Policy staleness',`${state.settings.stalenessDays} days`],
     ['Marketplaces',state.settings.marketplaces.join(', ')],
+    ['Submissions',state.settings.submissionsPaused?`PAUSED — ${state.settings.pauseReason}`:'Active'],
+    ['Approved-for-filing list',state.settings.approvedAsins.length?`${state.settings.approvedAsins.length} ASINs${state.settings.approvedWeekOf?` · week of ${fmtDate(state.settings.approvedWeekOf)}`:''}`:'All non-protected ASINs'],
+    ['30-day success rate',(()=>{const x=successRate(closedBetween(0,30));return x?`${x.pct}% of ${x.n} closed`:'No closed cases yet'})()],
+    ...state.policies.map(p=>{const x=successRate(closedBetween(0,30).filter(c=>state.reviews.find(r=>r.id===c.reviewId)?.classification?.policyId===p.id));return x?[`· ${p.heading}`,`${x.pct}% of ${x.n}`]:null}).filter(Boolean),
+    ...brandsInUse().map(b=>{const x=successRate(closedBetween(0,30).filter(c=>state.reviews.find(r=>r.id===c.reviewId)?.brand===b));return x?[`· ${b}`,`${x.pct}% of ${x.n}`]:null}).filter(Boolean),
     ['Protected ASINs',state.protectedAsins.filter(x=>x.status==='active').length],
     ['Stale policies',stale?`${stale} need recheck`:'Current'],
     ['Version',state.settings.scriptVersion]
@@ -459,7 +499,7 @@ function renderDashboard(){
     ['Monitoring',counts.monitoring,'Submitted cases']
   ].map(x=>`<div class="metric"><span>${x[0]}</span><b>${x[1]}</b><small>${x[2]}</small></div>`).join('');
 
-  const steps=[['Collect','System + file','Approved source, CSV, or manual intake'],['Screen','Automated','Missing-data, protected-ASIN, prior-filing, stale-policy, exclusion gates'],['Classify','Assisted','Verdict: CLEAR VIOLATION / HOLD / NOT ELIGIBLE'],['Validate','Human','Confirm source, exact quote, current policy, primary-subject'],['Approve','Two people','AB and Brand Manager decisions (independent)'],['Draft','Automated','Editable case ≤150 words, evidence-quote locked'],['Submit','Manual','Named submitter uses current Amazon route'],['Monitor','Tracked','Internal observation window'],['Close','Audited','Record outcome, follow-up count, and learning']];
+  const steps=[['Collect','System + file','Approved source, CSV, or manual intake'],['Screen','Automated','Missing-data, protected-ASIN, prior-filing, stale-policy, exclusion gates'],['Classify','Assisted','Verdict: CLEAR VIOLATION / HOLD / NOT ELIGIBLE'],['Validate','Human','Confirm source, exact quote, current policy, primary-subject'],['Approve','Two people','AB and Brand Manager decisions (independent)'],['Draft','Automated','Editable case ≤150 words, evidence-quote locked'],['Submit','Manual','Named submitter uses current Amazon route'],['Monitor','Tracked','Internal observation window'],['Close','Audited','Record Amazon response (removed / declined), feeds the 30-day success rate and auto-pause']];
   $('#workflow').innerHTML=steps.map((s,i)=>`<button data-workflow="${i}" data-message="${esc(s[2])}"><span class="step-num">${i+1}</span><strong>${s[0]}</strong><span>${s[1]}</span></button>`).join('');
 
   const actions=[];
@@ -477,7 +517,7 @@ function renderDashboard(){
 
   renderPilotControls();
 
-  const recent=[...state.cases].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,5);
+  const recent=[...state.cases].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).slice(0,5);
   $('#recentCases').innerHTML=recent.length?recent.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return `<tr><td><b>${esc(c.id)}</b></td><td>${esc(r?.asin)}<span class="cell-sub">${esc(r?.brand)} · ${esc(r?.marketplace)}</span></td><td>${esc(policyById(r?.classification?.policyId)?.heading||r?.classification?.category||'—')}</td><td><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></td><td>${esc(c.submitter||'Unassigned')}</td><td>${fmtDate(c.updatedAt)}</td></tr>`}).join(''):'<tr><td colspan="6"><div class="empty-state"><strong>No cases generated</strong><span>Approved reviews will appear here.</span></div></td></tr>';
 }
 
@@ -497,10 +537,10 @@ function renderReviews(){
     if(brand!=='all'&&r.brand!==brand)return false;
     if(mp!=='all'&&r.marketplace!==mp)return false;
     return [r.id,r.reviewId,r.asin,r.brand,r.title,r.text].join(' ').toLowerCase().includes(search);
-  }).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+  }).sort(($('#reviewSort')?.value||'priority')==='priority'?((a,b)=>(priorityScore(b)??-1)-(priorityScore(a)??-1)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))):((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))));
 
   $('#reviewTableBody').innerHTML=list.map(r=>{
-    const verdictCell=r.workflow_state==='blocked'?`<span class="tag neutral" title="${esc(r.block_detail||'')}">BLOCKED · ${esc(r.block_reason||'')}</span>`:r.verdict?`<span class="tag ${VERDICT_CLASS[r.verdict]}">${VERDICTS[r.verdict]}</span>${r.classification?`<span class="cell-sub">${r.classification.confidence}% · ${esc(customerRoute(r).label)}</span>`:''}`:'<span class="tag neutral">Not analyzed</span>';
+    const verdictCell=r.workflow_state==='blocked'?`<span class="tag neutral" title="${esc(r.block_detail||'')}">BLOCKED · ${esc(r.block_reason||'')}</span>`:r.verdict?`<span class="tag ${VERDICT_CLASS[r.verdict]}">${VERDICTS[r.verdict]}</span>${r.classification?`<span class="cell-sub">${r.classification.confidence}% · ${esc(customerRoute(r).label)}${priorityScore(r)!==null?` · Priority ${priorityScore(r)}`:''}</span>`:''}`:'<span class="tag neutral">Not analyzed</span>';
     const wfCell=`<span class="tag ${WORKFLOW_CLASS[r.workflow_state]||'neutral'}">${WORKFLOW_STATES[r.workflow_state]||r.workflow_state}</span>`;
     return `<tr><td><input class="review-check" data-id="${r.id}" type="checkbox" ${selectedReviews.has(r.id)?'checked':''} aria-label="Select ${esc(r.id)}"></td><td><div class="cell-title" title="${esc(r.text)}">${esc(r.title||r.text)}</div><span class="cell-sub">${esc(r.reviewId||r.id)} · ${fmtDate(r.reviewDate)}</span></td><td><b>${esc(r.asin)}</b><span class="cell-sub">${esc(r.brand)} · ${esc(r.marketplace)}</span></td><td><span class="rating">${esc(r.rating)} ★</span></td><td>${verdictCell}</td><td>${wfCell}</td><td>${fmtDate(r.updatedAt)}</td><td><div class="row-actions"><button class="btn small secondary open-review" data-id="${r.id}">Open</button></div></td></tr>`;
   }).join('');
@@ -510,7 +550,7 @@ function renderReviews(){
 
 function renderCases(){
   const search=($('#caseSearch')?.value||'').toLowerCase();const status=$('#caseStatusFilter')?.value||'all';
-  const list=state.cases.filter(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return(status==='all'||c.status===status)&&[c.id,c.amazonReference,c.route,c.submitter,r?.asin,r?.brand,c.draft].join(' ').toLowerCase().includes(search)}).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+  const list=state.cases.filter(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return(status==='all'||c.status===status)&&[c.id,c.amazonReference,c.route,c.submitter,r?.asin,r?.brand,c.draft].join(' ').toLowerCase().includes(search)}).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   $('#caseTableBody').innerHTML=list.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);const ap=r?.approvals||{};const abOk=ap.ab?.decision==='approve';const bmOk=ap.brandManager?.decision==='approve';const okCount=(abOk?1:0)+(bmOk?1:0);return `<tr><td><b>${esc(c.id)}</b><span class="cell-sub">Created ${fmtDate(c.createdAt)}${c.followUpCount?` · ${c.followUpCount} follow-up`:''}</span></td><td><b>${esc(r?.asin)}</b><span class="cell-sub">${esc(r?.brand)} · ${esc(r?.marketplace)}</span></td><td>${esc(policyById(r?.classification?.policyId)?.heading||r?.classification?.category||'—')}</td><td>${okCount}/2 approved</td><td><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></td><td>${esc(c.submitter||'Unassigned')}</td><td>${esc(c.amazonReference||'Not issued')}</td><td>${esc(caseNextAction(c))}</td><td><button class="btn small secondary open-case" data-id="${c.id}">Open</button></td></tr>`}).join('');
   $('#casesEmpty').classList.toggle('hidden',list.length>0);
 }
@@ -547,9 +587,16 @@ function renderSettings(){
     <div class="field"><label>Policy staleness (days)</label><input id="setStalenessDays" type="number" min="1" value="${s.stalenessDays}"></div>
     <div class="field full"><label>Active marketplaces (comma-separated)</label><input id="setMarketplaces" value="${esc(s.marketplaces.join(','))}"></div>
     <div class="field full"><label>Notification channel (Slack channel or email)</label><input id="setNotification" value="${esc(s.notificationChannel||'')}" placeholder="#review-ops or ops@company.com"></div>
+    <div class="field full"><label>Approved-for-filing ASINs this week (comma-separated parent or child ASINs; empty = all non-protected)</label><input id="setApprovedAsins" value="${esc((s.approvedAsins||[]).join(','))}" placeholder="B08KQKPKWC, B0D952H31F"></div>
+    <div class="field"><label>Approved list — week of</label><input id="setApprovedWeekOf" type="date" value="${esc(s.approvedWeekOf||'')}"></div>
+    <div class="field"><label>Precision floor for auto-pause (%)</label><input id="setPrecisionFloor" type="number" min="0" max="100" value="${s.precisionFloor}"></div>
+    <div class="field"><label class="check-row"><input id="setAutoSync" type="checkbox" ${s.autoSyncMondays?'checked':''}> Auto-sync all Sheets on the first open each Monday</label></div>
+    <div class="field full"><label>Submissions</label>${s.submissionsPaused?`<p class="modal-note"><b>PAUSED:</b> ${esc(s.pauseReason)}</p><button class="btn secondary" type="button" id="resumeSubmissionsBtn">Resume submissions…</button>`:`<p class="modal-note">Active. The app pauses automatically on a Protected ASIN breach or when precision stays below the floor two weeks running.</p><button class="btn danger" type="button" id="pauseSubmissionsBtn">Pause submissions…</button>`}</div>
     <div class="field"><label>Script version</label><input id="setScriptVersion" value="${esc(s.scriptVersion||APP_VERSION)}" readonly></div>`;
   $('#ownersTableBody').innerHTML=state.owners.map((o,i)=>`<tr><td>${esc(o.role)}</td><td><input data-owner-idx="${i}" data-field="name" value="${esc(o.name)}"></td><td><input data-owner-idx="${i}" data-field="brands" value="${esc((o.brands||[]).join(','))}"></td><td><input data-owner-idx="${i}" data-field="marketplaces" value="${esc((o.marketplaces||[]).join(','))}"></td><td><button class="btn small danger remove-owner" data-idx="${i}">Remove</button></td></tr>`).join('');
   renderSheetSyncs();
+  const pb=$('#pauseSubmissionsBtn');if(pb)pb.onclick=()=>{const why=prompt('Reason for pausing submissions?');if(!why)return;pauseSubmissions(why.trim(),'user');saveState()};
+  const rb=$('#resumeSubmissionsBtn');if(rb)rb.onclick=()=>{const who=prompt('Resumption requires Erik’s approval. Name of the approver:');if(!who)return;const why=prompt('Root cause documented (short summary):');if(!why)return;const before=s.pauseReason;s.submissionsPaused=false;s.pauseReason='';logAudit('settings','pause',`Submissions resumed — approved by ${who.trim()}`,who.trim(),before,'active',why.trim());saveState();toast('Submissions resumed')};
 }
 
 /* ── modal ─────────────────────────────────────────────────────────── */
@@ -659,6 +706,7 @@ function reviewNextStep(r){
   if(r.workflow_state==='blocked')return `Screening block: ${BLOCK_REASONS[r.block_reason]||r.block_reason}. Correct the data and re-run analysis.`;
   if(!r.classification)return 'Run screening to identify the correct customer route.';
   if(r.verdict==='not_eligible')return 'Route as customer feedback. No removal case is created.';
+  if(!isApprovedForFiling(r))return `Waiting: ${r.asin} is not on this week's approved-for-filing list (Settings).`;
   if(!r.validation?.at)return 'Complete all five validation checks and name the validator.';
   const ap=r.approvals||{};if(ap.ab?.decision!=='approve'||ap.brandManager?.decision!=='approve')return 'Record AB and Brand Manager approvals (both must be approve).';
   if(!caseForReview(r.id))return 'Generate the editable case draft.';
@@ -668,6 +716,7 @@ function reviewNextStep(r){
 function saveValidation(r){
   if(!r.classification){toast('Run analysis before validation');return}
   if(!['clear_violation','hold'].includes(r.verdict)){toast('Only CLEAR VIOLATION or HOLD verdicts can be validated.');return}
+  if(!isApprovedForFiling(r)){toast(`${r.asin} is not on this week's approved-for-filing list`);return}
   const by=$('#validatorName').value.trim();if(!by){toast('Validator name is required');return}
   const before=r.workflow_state;
   r.validation={sourceConfirmed:true,exactQuoteConfirmed:true,policyCurrent:true,productOnlyExcluded:true,exclusionsChecked:true,notes:$('#validationNotes').value.trim(),by,at:now()};
@@ -700,6 +749,7 @@ function generateCase(r){
   if(!ap.ab||ap.ab.decision!=='approve'||!ap.brandManager||ap.brandManager.decision!=='approve'){toast('Both AB and Brand Manager must approve');return}
   const p=policyById(r.classification?.policyId);
   if(!p||!isPolicyFresh(p)){toast('The policy entry must be active and current');return}
+  if(!isApprovedForFiling(r)){toast(`${r.asin} is not on this week's approved-for-filing list`);return}
   let c=caseForReview(r.id);
   if(!c){c={id:nextCaseId(),reviewId:r.id,status:'ready',draft:caseDraft(r,p),route:p.route,amazonReference:'',submittedAt:'',nextReviewAt:'',outcome:'',submitter:'',followUpCount:0,createdAt:now(),updatedAt:now()};state.cases.unshift(c);logAudit('case',c.id,'Case generated',ap.ab.by,'','ready',`Policy: ${p.heading}`);r.workflow_state='drafted';r.updatedAt=now();saveState()}
   openCase(c.id);
@@ -741,6 +791,7 @@ function openCase(id){
       <div class="field full"><label>Current submission route</label><input id="caseRoute" value="${esc(APPROVED_ROUTE)}" readonly></div>
       <div class="field"><label>Named submitter *</label><input id="caseSubmitter" value="${esc(c.submitter||'')}" placeholder="Person who filed to Amazon"></div>
       <div class="field"><label>Amazon reference ID, if issued</label><input id="amazonReference" value="${esc(c.amazonReference||'')}"></div>
+      <div class="field"><label>Latest Amazon response</label><select id="amazonResponse">${Object.entries(AMAZON_RESPONSES).map(([k,v])=>`<option value="${k}" ${(c.amazonResponse||'pending')===k?'selected':''}>${v}</option>`).join('')}</select></div>
       <div class="field"><label>Submitted date</label><input id="submittedAt" type="date" value="${esc(c.submittedAt?.slice(0,10)||'')}"></div>
       <div class="field"><label>Next internal check</label><input id="nextReviewAt" type="date" value="${esc(c.nextReviewAt||'')}"></div>
       <div class="field full"><label>Outcome / closure notes</label><textarea id="caseOutcome">${esc(c.outcome||'')}</textarea></div>
@@ -763,17 +814,21 @@ function openCase(id){
 function saveCaseFields(c,quiet=false){
   const draft=$('#caseDraftArea').value.trim();
   const wc=wordCount(draft);
-  if(wc>150){toast(`Draft exceeds 150 words (${wc}). Trim before saving.`);return}
+  if(wc>150){toast(`Draft exceeds 150 words (${wc}). Trim before saving.`);return false}
   const r=state.reviews.find(x=>x.id===c.reviewId);
   const evidence=r?.classification?.evidence||'';
-  if(evidence&&!draft.includes(evidence)){toast('Evidence quote is missing from the draft. Do not remove it.');return}
+  if(evidence&&!draft.includes(evidence)){toast('Evidence quote is missing from the draft. Do not remove it.');return false}
   const before=`${c.status}·${c.submitter||''}`;
-  c.draft=draft;c.route=APPROVED_ROUTE;c.submitter=$('#caseSubmitter').value.trim();c.amazonReference=$('#amazonReference').value.trim();c.submittedAt=$('#submittedAt').value;c.nextReviewAt=$('#nextReviewAt').value;c.outcome=$('#caseOutcome').value.trim();c.updatedAt=now();
+  c.draft=draft;c.route=APPROVED_ROUTE;c.submitter=$('#caseSubmitter').value.trim();c.amazonReference=$('#amazonReference').value.trim();c.submittedAt=$('#submittedAt').value;c.nextReviewAt=$('#nextReviewAt').value;c.outcome=$('#caseOutcome').value.trim();c.amazonResponse=$('#amazonResponse')?.value||c.amazonResponse||'pending';c.updatedAt=now();
   logAudit('case',c.id,'Case fields saved','user',before,`${c.status}·${c.submitter||''}`);
   saveState();if(!quiet)toast('Case saved');
+  return true;
 }
 
 function markSubmitted(c){
+  checkStopConditions();
+  if(state.settings.submissionsPaused){saveState();toast(`Submissions are paused: ${state.settings.pauseReason}. Resume in Settings.`);return}
+  const rv=state.reviews.find(x=>x.id===c.reviewId);if(rv&&!isApprovedForFiling(rv)){toast(`${rv.asin} is not on this week's approved-for-filing list`);return}
   const weekAgo=new Date();weekAgo.setDate(weekAgo.getDate()-7);
   const weekly=state.cases.filter(x=>x.id!==c.id&&(x.recordedAt||x.submittedAt)&&new Date(x.recordedAt||x.submittedAt)>=weekAgo).length;
   if(weekly>=state.settings.weeklyCap){toast(`Pilot cap reached: ${state.settings.weeklyCap} submissions in seven days`);return}
@@ -781,7 +836,8 @@ function markSubmitted(c){
   if(!submitter){toast('Named submitter is required before recording submission');$('#caseSubmitter').focus();return}
   const route=$('#caseRoute').value.trim();
   if(!route){toast('Confirm the current submission route before recording');return}
-  saveCaseFields(c,true);
+  if(!saveCaseFields(c,true))return;
+  if(!c.submittedAt)c.submittedAt=today();
   if(!c.submittedAt||!c.submitter||!c.route){toast('Submission blocked — required fields missing');return}
   c.submittedAt=c.submittedAt||today();c.nextReviewAt=c.nextReviewAt||addDays(c.submittedAt,state.settings.observationDays);c.status='submitted';c.recordedAt=c.recordedAt||now();c.updatedAt=now();
   logAudit('case',c.id,`Manual submission recorded by ${submitter}`,submitter,'ready','submitted',c.amazonReference?`Amazon ref: ${c.amazonReference}`:'No reference issued');
@@ -790,6 +846,10 @@ function markSubmitted(c){
 
 function recordFollowUp(c){
   if((c.followUpCount||0)>=state.settings.followUpMax){toast('Follow-up cap reached for this case');return}
+  if(state.settings.submissionsPaused){toast(`Submissions are paused: ${state.settings.pauseReason}`);return}
+  const resp=$('#amazonResponse')?.value||c.amazonResponse;
+  if((c.followUpCount||0)>=1&&resp!=='insufficient_info'){toast('A further follow-up is only allowed when Amazon asked for more information');return}
+  c.amazonResponse=resp;
   const submitter=$('#caseSubmitter').value.trim()||c.submitter;
   if(!submitter){toast('Named submitter is required');return}
   c.followUpCount=(c.followUpCount||0)+1;c.status='monitoring';c.nextReviewAt=addDays(today(),state.settings.observationDays);c.updatedAt=now();
@@ -800,9 +860,11 @@ function recordFollowUp(c){
 function closeCaseRecord(c){
   const outcome=$('#caseOutcome').value.trim();
   if(!outcome){toast('Add the final outcome before closing');return}
-  saveCaseFields(c,true);
+  if(!['removed','declined'].includes($('#amazonResponse').value)){toast('Set the latest Amazon response to Removed or Declined before closing');return}
+  if(!saveCaseFields(c,true))return;
   const before=c.status;c.status='closed';c.closedAt=now();c.updatedAt=now();
-  logAudit('case',c.id,`Case closed`,c.submitter||'user',before,'closed',outcome);
+  logAudit('case',c.id,`Case closed — ${AMAZON_RESPONSES[c.amazonResponse]}`,c.submitter||'user',before,'closed',outcome);
+  checkStopConditions();
   saveState();openCase(c.id);toast('Case closed');
 }
 
@@ -1261,6 +1323,10 @@ function saveSettings(){
   s.stalenessDays=Math.max(1,Number($('#setStalenessDays').value)||1);
   s.marketplaces=$('#setMarketplaces').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
   s.notificationChannel=$('#setNotification').value.trim();
+  s.approvedAsins=$('#setApprovedAsins').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
+  s.approvedWeekOf=$('#setApprovedWeekOf').value;
+  s.precisionFloor=Math.min(100,Math.max(0,Number($('#setPrecisionFloor').value)||0));
+  s.autoSyncMondays=$('#setAutoSync').checked;
   $$('#ownersTableBody input[data-owner-idx]').forEach(inp=>{const i=Number(inp.dataset.ownerIdx),f=inp.dataset.field;if(f==='name')state.owners[i].name=inp.value.trim();else state.owners[i][f]=inp.value.split(',').map(x=>x.trim()).filter(Boolean)});
   logAudit('settings','global','Settings updated','user',before,JSON.stringify(state.settings));
   saveState();toast('Settings saved');
@@ -1334,7 +1400,11 @@ $('#factoryResetBtn').onclick=()=>{if(confirm('FACTORY RESET wipes everything in
 $('#approveProposalBtn').onclick=()=>{state.settings.proposalApproved=true;logAudit('settings','proposal','Phase 0 approved','user','','approved');saveState();toast('Phase 0 approval recorded on this device')};
 ['downloadGoogleTemplate','downloadGoogleTemplate2'].forEach(id=>{const el=$(`#${id}`);if(el)el.onclick=()=>runExport('review-template')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeDrawer()}});
+$('#reviewSort').onchange=renderReviews;
+checkStopConditions();
 renderAll();
+/* §6.4 Monday sync: the first open each Monday pulls the last 7 days from every configured tab */
+if(state.settings.autoSyncMondays&&new Date().getDay()===1&&location.protocol.startsWith('http')&&!state.sheetSyncs.some(c=>String(c.lastSyncedAt||'').slice(0,10)===today())){logAudit('sync','auto','Monday auto-sync started','sheet-sync','','');syncAllSheets()}
 </script>
 </body>
 </html>
