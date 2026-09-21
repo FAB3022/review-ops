@@ -472,7 +472,7 @@ function sentenceAround(text,at,len){
   return text.slice(start,ends.length?Math.min(...ends):text.length).trim();
 }
 function classifyReview(r){
-  const text=`${r.title||''} ${r.text||''}`;
+  const text=`${r.title||''}\n${r.text||''}`;
   const norm=text.replace(/[\u2018\u2019\u02BC]/g,"'");
   const applicable=state.policies.filter(p=>p.status==='active'&&isPolicyFresh(p)&&(p.marketplaces||[]).includes(r.marketplace));
   const productOnly=text.match(/(?:stopped working|feels cheaper|fit is poor|fabric feels|quality was)[^.!?]*/i);
@@ -542,7 +542,7 @@ function analyzeReview(r,actor='system'){
 
 /* gates 7–8: run only once a policy is matched, because both depend on the matched policy and its evidence */
 function postClassifyGates(r,p,result){
-  const text=`${r.title||''} ${r.text||''}`;
+  const text=`${r.title||''}\n${r.text||''}`;
   const lower=text.toLowerCase();
   const excl=(p.exclusionKeywords||[]).find(k=>k&&lower.includes(k.toLowerCase()));
   if(excl)return {reason:'EXCLUSION_MATCH',detail:`${p.heading}: matched exclusion "${excl}" — ${p.exclusions||'listed as not a case'}`};
@@ -774,11 +774,11 @@ function renderReviewDrawer(r){
   const verdictBadge=r.workflow_state==='blocked'?tag('neutral',`BLOCKED · ${r.block_reason}`):r.verdict?tag(VERDICT_CLASS[r.verdict],VERDICTS[r.verdict]):tag('neutral','Not analyzed');
   const wfBadge=tag(WORKFLOW_CLASS[r.workflow_state]||'neutral',WORKFLOW_STATES[r.workflow_state]||r.workflow_state);
   $('#drawerBody').innerHTML=`
-    <section class="detail-section"><header><h3>Source review</h3>${wfBadge}</header><div class="detail-content"><div class="analysis-grid"><div class="analysis-box"><label>Review ID</label><b>${esc(r.reviewId||'Not provided')}</b></div><div class="analysis-box"><label>Review date</label><b>${fmtDate(r.reviewDate)}</b></div><div class="analysis-box"><label>Rating</label><b>${esc(r.rating)} ★</b></div><div class="analysis-box"><label>Source</label><b>${r.sourceRef?`<a href="${esc(r.sourceRef)}" target="_blank" rel="noopener">Open reference ↗</a>`:'Not provided'}</b></div></div><div class="quote" style="margin-top:10px">${esc(r.text)}</div></div></section>
+    <section class="detail-section"><header><h3>Source review</h3>${wfBadge}</header><div class="detail-content"><div class="analysis-grid"><div class="analysis-box"><label>Review ID</label><b>${esc(r.reviewId||'Not provided')}</b></div><div class="analysis-box"><label>Review date</label><b>${fmtDate(r.reviewDate)}</b></div><div class="analysis-box"><label>Rating</label><b>${esc(r.rating)} ★</b></div><div class="analysis-box"><label>Source</label><b>${r.sourceRef?`<a href="${esc(r.sourceRef)}" target="_blank" rel="noopener">Open reference ↗</a>`:`<a href="${esc(findOnAmazonUrl(r))}" target="_blank" rel="noopener" title="Opens the product's ${esc(r.rating)}-star reviews, newest first. Find this review and copy its link.">Find on Amazon ↗</a>`}</b></div></div><div class="quote" style="margin-top:10px">${esc(r.text)}</div></div></section>
 
     ${r.workflow_state==='blocked'?`<section class="detail-section"><header><h3>Screening block</h3><span class="tag neutral">${esc(r.block_reason)}</span></header><div class="detail-content"><p class="modal-note"><b>${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}:</b> ${esc(r.block_detail||'')}</p><p class="modal-note">Correct the underlying data (edit the source record, update the Protected register, close the prior case, or refresh the policy's last-checked date) and re-run analysis.</p></div></section>`:''}
 
-    <section class="detail-section"><header><h3>Automated screening</h3>${verdictBadge}</header><div class="detail-content">${r.classification?`<div class="analysis-grid"><div class="analysis-box"><label>Verdict</label><b>${VERDICTS[r.verdict]||'—'}</b></div><div class="analysis-box"><label>Confidence</label><b>${r.classification.confidence}%</b></div><div class="analysis-box"><label>Policy entry</label><b>${esc(p?.heading||'No policy match')}</b></div><div class="analysis-box"><label>Policy freshness</label><b>${p?(isPolicyFresh(p)?'Current':'Recheck required'):'—'}</b></div></div><p class="modal-note">${esc(r.classification.rationale)}</p><div class="quote"><b>Exact evidence:</b> "${esc(r.classification.evidence)}"</div>`:'<p class="modal-note">Run analysis to classify this review.</p>'}</div></section>
+    <section class="detail-section"><header><h3>Automated screening</h3>${verdictBadge}</header><div class="detail-content">${r.classification?`<div class="analysis-grid"><div class="analysis-box"><label>Verdict</label><b>${VERDICTS[r.verdict]||'—'}</b></div><div class="analysis-box"><label>Confidence</label><b>${r.classification.confidence}%</b></div><div class="analysis-box"><label>Policy entry</label><b>${esc(p?.heading||'No policy match')}</b></div><div class="analysis-box"><label>Policy freshness</label><b>${p?(isPolicyFresh(p)?'Current':'Recheck required'):'—'}</b></div></div><p class="modal-note">${esc(r.classification.rationale)}</p><div class="quote"><b>Exact evidence:</b> "${esc(r.classification.evidence)}"</div>${isCaseCandidate(r)&&p?`<div class="quote" style="margin-top:8px"><b>Rule it breaks:</b> ${esc(guidelineBasis(r,p))}</div><p class="modal-note">Check on Amazon: <a href="${esc(p.url)}" target="_blank" rel="noopener">Seller Central policy ↗</a>${p.guidelineUrl?` · <a href="${esc(p.guidelineUrl)}" target="_blank" rel="noopener">Community Guidelines ↗</a>`:''}</p>`:''}`:'<p class="modal-note">Run analysis to classify this review.</p>'}</div></section>
 
     <section class="detail-section"><header><h3>Customer outcome and routing</h3><span class="tag ${route.key==='policy'?'info':route.key==='product'?'success':route.key==='blocked'?'neutral':'warning'}">${esc(route.label)}</span></header><div class="detail-content"><p class="modal-note">${esc(route.detail)}</p></div></section>
 
@@ -810,6 +810,10 @@ function renderReviewDrawer(r){
 }
 
 function bothDecided(ap){return Boolean(ap?.ab?.decision&&ap?.brandManager?.decision)}
+const AMAZON_DOMAINS={US:'www.amazon.com',CA:'www.amazon.ca',MX:'www.amazon.com.mx',BR:'www.amazon.com.br'};
+const STAR_FILTER={1:'one_star',2:'two_star',3:'three_star',4:'four_star',5:'five_star'};
+function findOnAmazonUrl(r){return `https://${AMAZON_DOMAINS[r.marketplace]||AMAZON_DOMAINS.US}/product-reviews/${encodeURIComponent(r.asin)}/?sortBy=recent&filterByStar=${STAR_FILTER[r.rating]||'all_stars'}`}
+function guidelineBasis(r,p){if(!p)return '';const cs=p.caseStatement||'';return cs.includes('{bullet}')&&!r.classification?.bullet?`Amazon's Community Guidelines (${p.heading}) do not allow: ${p.guidance}`:cs.replace('{bullet}',r.classification?.bullet||'')}
 function isCaseCandidate(r){return r.workflow_state!=='blocked'&&Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict)}
 function ineligibleNote(r){
   const why=r.workflow_state==='blocked'?`Blocked at screening: ${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}${r.block_detail?` — ${esc(r.block_detail)}`:''}.`:!r.classification?'Not analysed yet — select Re-run analysis.':esc(r.classification.rationale||'No Community Guidelines rule is broken.');
@@ -897,7 +901,7 @@ function caseDraft(r,p){
     ...(r.sourceRef?[`Review link: ${r.sourceRef}`]:[]),
     '',
     `Community Guidelines category: ${p.heading}`,
-    `Guideline basis: ${(p.caseStatement||'').includes('{bullet}')&&!r.classification.bullet?`Amazon's Community Guidelines (${p.heading}) do not allow: ${p.guidance}`:(p.caseStatement||p.guidance).replace('{bullet}',r.classification.bullet||'')}`,
+    `Guideline basis: ${guidelineBasis(r,p)||p.guidance}`,
     ...(p.url?[`Seller Central policy: ${p.url}`]:[]),
     ...(p.guidelineUrl?[`Community Guidelines: ${p.guidelineUrl}`]:[]),
     '',

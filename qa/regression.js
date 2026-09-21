@@ -220,5 +220,15 @@ ok(ux.res&&ux.res.scanned>700&&ux.res.kept>=20&&ux.keptAllCandidates&&ux.keptCou
 ok(ux.noAuditBloat,'scan does not flood the audit log with discarded reviews');
 ok(ux.candHasChecklist&&ux.caseStatus==='ready'&&ux.draftBasis&&ux.draftWords<=150,'scanned candidate → validation → AB + BM approval → case ready with guideline-based draft');
 
+// Validator aids: title/body kept separate in evidence, Find on Amazon link, rule shown on the review
+const va=await p.evaluate(()=>{state.settings.marketplaces=['US','CA'];state.policies.forEach(x=>x.lastChecked=today());
+ const r={id:nextReviewId(),asin:'B0DDTXFRNB',brand:'DECOLURE',marketplace:'US',rating:1,title:'Dissatisfied',text:'Missing a pillow case from the order. 4 pictured received 3.',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};
+ state.reviews.push(r);analyzeReview(r);saveState();openReview(r.id);const body=$('#drawerBody').innerHTML;closeDrawer();
+ return {verdict:r.verdict,evidence:r.classification?.evidence,find:/product-reviews\/B0DDTXFRNB\/\?sortBy=recent&amp;filterByStar=one_star/.test(body),rule:/Rule it breaks:<\/b> Amazon's Community Guidelines \(Seller, order, or shipping feedback\): "We don't allow reviews or questions and answers that only focus on: Ordering issues and returns"/.test(body.replace(/&quot;/g,'"').replace(/&#39;/g,"'")),links:/Seller Central policy ↗/.test(body)}});
+console.log(JSON.stringify(va));
+ok(va.verdict==='clear_violation'&&va.evidence==='Missing a pillow case from the order','evidence is the exact sentence (title not merged into the quote)');
+ok(va.find,'"Find on Amazon" opens the product reviews filtered to the review\'s star rating');
+ok(va.rule&&va.links,'review screen shows Amazon\'s exact rule and the policy links for the validator');
+
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
