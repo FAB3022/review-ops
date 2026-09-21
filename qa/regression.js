@@ -36,7 +36,7 @@ const g=await p.evaluate(()=>{const mk=(o)=>{const r={id:nextReviewId(),asin:'B0
  return out});
 console.log(JSON.stringify(g));
 ok(g.missing==='MISSING_DATA'&&g.removed==='REVIEW_REMOVED'&&g.protected==='PROTECTED_ASIN'&&g.mp==='NO_MARKETPLACE_MATCH'&&g.stale==='STALE_POLICY','gates 1,2,3,5,6');
-ok(g.exclPromo==='EXCLUSION_MATCH'&&g.exclPersonal==='EXCLUSION_MATCH','gate 7 EXCLUSION_MATCH');
+ok(g.exclPromo!=='EXCLUSION_MATCH'&&g.exclPersonal==='EXCLUSION_MATCH','gate 7 EXCLUSION_MATCH (plain Amazon links are allowed by the guidelines)');
 ok(g.priorClosed==='PRIOR_FILING','gate 4 blocks refile after close');ok(g.selfNotBlocked==='none','own case does not self-block');
 ok(g.clear==='clear_violation'&&g.product==='not_eligible','classifier verdicts');
 ok(await p.evaluate(()=>{const r={title:'',text:'call 555 123 4567'};return postClassifyGates(r,state.policies[0],{evidence:'not in text'})?.reason})==='NO_EVIDENCE_QUOTE','gate 8 NO_EVIDENCE_QUOTE');
@@ -111,39 +111,91 @@ const fp=await p.evaluate(()=>{const v=(rating,text)=>classifyReview({rating,tit
 console.log(JSON.stringify(fp));
 ok(fp.buyAgain==='not_eligible'&&fp.wontBuy==='not_eligible','"buy from them again" is not promotional content');
 ok(fp.insertCard==='not_eligible','mention of our own discount card is not promotional content');
-ok(fp.date==='not_eligible'&&fp.orderId==='not_eligible','dates and order numbers are not phone numbers');
+ok(fp.date==='not_eligible'&&fp.orderId==='clear_violation','dates are not phone numbers; order numbers are Private information (Community Guidelines)');
 ok(fp.realPhone!=='not_eligible'&&fp.realCode!=='not_eligible','real phone numbers and codes still detected');
 ok(fp.wrongSize==='clear_violation','order-only wrong item sent → CLEAR (seller and order feedback)');ok(fp.words<=150,'improved case draft stays within 150 words: '+fp.words);
 
-// Community Guidelines categories (8 policies) — positives, safeguards and mixed-content handling
-const cg=await p.evaluate(()=>{state.policies.forEach(x=>x.lastChecked=today());const v=(rating,text)=>{const c=classifyReview({id:'X',asin:'B0CG',rating,title:'',text,marketplace:'US'});return c.verdict+':'+(c.policyId||'-')};
+// Community Guidelines "What's not allowed" register (15 policies) — verbatim wording, sub-bullets, safeguards, mixed content
+const cg=await p.evaluate(()=>{state.policies.forEach(x=>x.lastChecked=today());state.settings.marketplaces=['US','CA','MX','BR'];
+ const run=(rating,text,mp='US')=>{const c=classifyReview({id:'X'+Math.round(Math.abs(text.length*rating)),asin:'B0CG',rating,title:'',text,marketplace:mp});return c.verdict+':'+(c.policyId||'-')+(c.bullet?'|'+c.bullet:'')};
+ const draftFor=(text,rating=1,mp='US')=>{const r={id:'D',asin:'B0X',marketplace:mp,reviewId:'R1ABCDEFGH',rating,title:'',text};const c=classifyReview(r);r.classification=c;return c.policyId?caseDraft(r,policyById(c.policyId)):''};
+ const d1=draftFor('Item never arrived.');const d2=draftFor('The box was crushed.');
  return {count:state.policies.filter(x=>BUILTIN_POLICY_IDS.includes(x.id)).length,
-  profanity:v(1,'These are shit.'),
-  incentive:v(2,'I received these for free in exchange for an honest review.'),
-  vine:v(2,'Vine review: I received these free in exchange for an honest review.'),
-  sellerAskedChange:v(1,'The seller offered me a refund if I changed my review.'),
-  pricingElsewhere:v(2,'Found the same set cheaper at Walmart.'),
-  pricingValue:v(2,'Not worth the price at all.'),
-  otherBrand:v(2,'Other brands are much better. The fabric pilled.'),
-  offtopic:v(1,'Amazon refused to refund me.'),
-  repetitiveSym:v(1,'!!!!!!!!!!!!'),
-  shortOk:v(3,'It’s ok.'),
-  orderOnly:v(1,'Item never arrived.'),
-  orderMixed:v(2,'Two pillow cases had a large tear and there is no way to contact the company.'),
-  missing:v(2,'Missing pieces, only received two pillow cases.'),
-  draft:caseDraft({asin:'B0X',marketplace:'US',reviewId:'R1ABCDEFGH',classification:{evidence:'Item never arrived'}},policyById('POL-SELLER')),draftWords:wordCount(caseDraft({asin:'B0X',marketplace:'US',reviewId:'R1ABCDEFGH',classification:{evidence:'Item never arrived'}},policyById('POL-SELLER')))}});
+  retiredInactive:state.policies.filter(x=>RETIRED_POLICY_IDS[x.id]).every(x=>x.status==='inactive'),
+  profanity:run(1,'These are shit.'),
+  nameCalling:run(1,'The staff are idiots.'),
+  defamation:run(1,'This company is a scam. The fabric is thin.'),
+  compensated:run(2,'I received these for free in exchange for an honest review.'),
+  sellerAskedChange:run(1,'The seller offered me a refund if I changed my review.'),
+  refundAfterReview:run(1,'Customer service was terrible. After they read my review they sent a refund.'),
+  willUpdate:run(1,'Item never arrived. I will update my review later.'),
+  coi:run(1,'I work for a competitor and these are worse.'),
+  pricingElsewhere:run(2,'Found this item here for $5 less than at my local store.'),
+  pricingValue:run(2,'Not worth the price at all.'),
+  comparison:run(2,'Other brands are much better. The fabric pilled.'),
+  walmart:run(1,'I have had better sheet sets from Walmart and Target.'),
+  amazonLink:run(1,'See https://www.amazon.com/dp/B0ABC instead.'),
+  affiliate:run(1,'Buy here https://www.amazon.com/dp/B0ABC?tag=deals-20 instead.'),
+  externalLink:run(1,'Go to www.bettersheets.com for real sheets.'),
+  orderNumber:run(1,'My order 112-3456789-1234567 came ripped.'),
+  french:run(1,"Les draps sont très minces et la qualité est mauvaise pour le prix, je ne les recommande pas du tout à personne.",'US'),
+  frenchCA:run(1,"Les draps sont très minces et la qualité est mauvaise pour le prix, je ne les recommande pas du tout à personne.",'CA'),
+  spanishUS:run(1,'Las sábanas son muy delgadas y la calidad es mala para el precio, no las recomiendo para nada.','US'),
+  gibberish:run(1,'asdfghjk qwrtpsdfg zxcvbnm'),
+  repetitiveSym:run(1,'!!!!!!!!!!!!'),
+  shortOk:run(3,'It’s ok.'),
+  medical:run(2,'These sheets cured my eczema but they pill.'),
+  notDelivered:run(1,'Item never arrived.'),
+  orderOnly:run(1,'The box was crushed.'),
+  orderMixed:run(2,'Two pillow cases had a large tear and there is no way to contact the company.'),
+  missing:run(2,'Missing pieces, only received two pillow cases.'),
+  d1,d2,d1w:wordCount(d1),d2w:wordCount(d2)}});
 console.log(JSON.stringify(cg));
-ok(cg.count===8,'8 Community Guidelines policies in the register');
-ok(cg.profanity==='clear_violation:POL-OFFENSIVE','profanity → CLEAR');
-ok(cg.incentive==='clear_violation:POL-INCENTIVE','incentivized review → CLEAR');
-ok(cg.vine.startsWith('clear_violation:POL-INCENTIVE'),'vine text still classified (the exclusion gate blocks it after classification)');
-ok(cg.sellerAskedChange.startsWith('not_eligible'),'SAFEGUARD: review alleging we offered an incentive is never flagged');
-ok(cg.pricingElsewhere.endsWith('POL-PRICING')&&cg.pricingValue.startsWith('not_eligible'),'price elsewhere flagged, value comment not');
-ok(cg.otherBrand==='hold:POL-PROMO','other brand recommendation with product talk → HOLD');
-ok(cg.offtopic==='clear_violation:POL-OFFTOPIC','Amazon service complaint → CLEAR');
-ok(cg.repetitiveSym==='clear_violation:POL-REPETITIVE'&&cg.shortOk.startsWith('not_eligible'),'symbol spam flagged, short genuine review not');
-ok(cg.orderOnly==='clear_violation:POL-SELLER'&&cg.orderMixed==='hold:POL-SELLER'&&cg.missing==='hold:POL-SELLER','order-only CLEAR, mixed and missing-pieces HOLD');
-ok(/Community Guidelines category: Seller and order feedback/.test(cg.draft)&&/Guideline basis: Amazon's Community Guidelines state/.test(cg.draft)&&/Seller Central policy: https:\/\/sellercentral\.amazon\.com\/gp\/help\/external\/GYRKB5RU3FS5TURN/.test(cg.draft)&&/Community Guidelines: https:\/\/www\.amazon\.com/.test(cg.draft)&&cg.draftWords<=150,'draft: guideline category and basis, Seller Central link first, Community Guidelines link, ≤150 words');
+ok(cg.count===15&&cg.retiredInactive,'15 Community Guidelines policies; retired v5.1 categories inactive');
+ok(cg.profanity==='clear_violation:POL-PROFANITY|Profanity, obscenities, or name-calling','profanity → CLEAR with exact sub-bullet');
+ok(cg.nameCalling.startsWith('hold:POL-PROFANITY')||cg.nameCalling.startsWith('clear_violation:POL-PROFANITY')?cg.nameCalling.startsWith('hold'):false,'name-calling → HOLD');
+ok(cg.defamation==='hold:POL-PROFANITY|Libel, defamation, or inflammatory content','fraud/scam accusation → HOLD (libel, defamation)');
+ok(cg.compensated==='clear_violation:POL-COMPENSATED','compensated review → CLEAR');
+ok(cg.sellerAskedChange.startsWith('not_eligible')&&cg.refundAfterReview.startsWith('not_eligible'),'SAFEGUARD: reviews mentioning our refund/offer in connection with a review are never flagged');
+ok(cg.willUpdate.startsWith('clear_violation:POL-NOTDELIVERED'),'"I will update my review" does not trip the safeguard');
+ok(cg.coi==='clear_violation:POL-PROMO','conflict of interest (competitor) → CLEAR');
+ok(cg.pricingElsewhere.startsWith('clear_violation:POL-PRICING')&&cg.pricingValue.startsWith('not_eligible'),"Amazon's own pricing example flagged, value comment not");
+ok(cg.comparison.startsWith('not_eligible')&&cg.walmart.startsWith('not_eligible'),'competitor comparisons are NOT flagged (Seller Central: not removable)');
+ok(cg.amazonLink.startsWith('not_eligible')&&cg.affiliate==='clear_violation:POL-LINKS'&&cg.externalLink==='clear_violation:POL-LINKS','Amazon link allowed; affiliate tag and external site flagged');
+ok(cg.orderNumber==='clear_violation:POL-PERSONAL|Order number','order number → Private information');
+ok(cg.french.startsWith('clear_violation:POL-LANGUAGE|French')&&cg.frenchCA.startsWith('not_eligible')&&cg.spanishUS.startsWith('not_eligible'),'French on Amazon.com flagged; French on CA and Spanish on US allowed');
+ok(cg.gibberish==='clear_violation:POL-REPETITIVE|Nonsense and gibberish'&&cg.repetitiveSym.startsWith('clear_violation:POL-REPETITIVE')&&cg.shortOk.startsWith('not_eligible'),'gibberish and symbol spam flagged; short genuine review not');
+ok(cg.medical.startsWith('hold:POL-MEDICAL'),'medical claim → HOLD');
+ok(cg.notDelivered==='clear_violation:POL-NOTDELIVERED','never received → CLEAR (review before delivery)');
+ok(cg.orderOnly==='clear_violation:POL-SELLER|Shipping packaging'&&cg.orderMixed.startsWith('hold:POL-SELLER')&&cg.missing==='clear_violation:POL-SELLER|Ordering issues and returns','order-only and missing-pieces-only CLEAR with sub-bullet; one product remark → HOLD');
+ok(/Guideline basis: Amazon's Community Guidelines \(Compensated or incentivized reviews\) state that customers are not allowed to "Post a review for a product before it has been delivered to you/.test(cg.d1),'draft quotes the verbatim guideline (not delivered)');
+ok(/"We don't allow reviews or questions and answers that only focus on: Shipping packaging"\./.test(cg.d2)&&/Seller Central policy: https:\/\/sellercentral\.amazon\.com\/gp\/help\/external\/201972160/.test(cg.d2),'draft quotes the exact sub-bullet and cites Seller Central first');
+ok(cg.d1w<=150&&cg.d2w<=150,'drafts ≤150 words: '+cg.d1w+' / '+cg.d2w);
 
+// Calibration from the independent review (21 Sep): only-focus, listing mismatch, curly apostrophes, off-Amazon safeguard
+const cal=await p.evaluate(()=>{const run=(rating,text,mp='US')=>{const c=classifyReview({id:'C'+text.length,asin:'B0CAL',rating,title:'',text,marketplace:mp});return c.verdict+':'+(c.policyId||'-')};
+ return {
+  curly:run(1,'I couldn’t even open the box. But decided I didn’t need it'),
+  onlyFocusDowngrade:run(2,'Wrong size sent. The fabric is soft and the stitching is great.'),
+  listing:run(2,'What we received was grey. Not like the pictures at all.'),
+  offAmazon:run(1,'Item never arrived. When emailing with the company they did nothing.'),
+  contactOnBox:run(1,'No phone number or email listed on the box so there is no way to contact the seller.'),
+  usedItem:run(1,'Used item came to me'),
+  emptyBoxFr:run(1,"J'ai reçu une boîte vide ? Je veux mes draps.",'CA'),
+  localWalmart:run(2,'These are great sheets but not at these prices, go to your local Walmart.'),
+  saleValue:run(3,'I purchased a king set on sale for $55. Too much maintenance.'),
+  functionRemark:run(2,'Was missing parts. The chair does not function flawlessly due to this.'),
+  medicalQuote:policyById('POL-MEDICAL').caseStatement,
+  hateQuote:policyById('POL-HATE').caseStatement}});
+console.log(JSON.stringify(cal));
+ok(cal.curly==='clear_violation:POL-SELLER','curly apostrophes are matched (evidence stays verbatim)');
+ok(cal.onlyFocusDowngrade.startsWith('not_eligible'),'order complaint that also assesses the product → NOT ELIGIBLE (Amazon: "only focus")');
+ok(cal.listing.startsWith('not_eligible'),'colour vs listing photos is product feedback, not an ordering issue');
+ok(cal.offAmazon.startsWith('not_eligible')&&cal.contactOnBox.startsWith('not_eligible'),'SAFEGUARD 2: contact outside Amazon / contact details on packaging → never report');
+ok(cal.usedItem==='clear_violation:POL-SELLER'&&cal.emptyBoxFr==='clear_violation:POL-SELLER','used item and empty box (French) → CLEAR');
+ok(cal.localWalmart==='hold:POL-PRICING'&&cal.saleValue.startsWith('not_eligible'),'"go to your local Walmart" flagged; personal sale price is a value comment');
+ok(cal.functionRemark==='hold:POL-SELLER','missing parts plus a product remark → HOLD');
+ok(!/This policy applies to all products\."/.test(cal.medicalQuote)&&/"We don't allow any statements or claims related to preventing or curing serious medical conditions or severe symptoms\."/.test(cal.medicalQuote),'Medical claims quote is verbatim');
+ok(/characteristics like:" race, ethnicity/.test(cal.hateQuote),'Hate speech quote keeps Amazon wording inside quotes only');
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
