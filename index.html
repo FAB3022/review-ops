@@ -1,0 +1,1305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Amazon Review Removal Operations</title>
+  <meta name="description" content="Internal review collection, screening, classification, validation, approval, drafting, submission, monitoring, and audit dashboard.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1739'/%3E%3Cpath d='M18 42V22h28v20H18Zm6-6h16v-8H24v8Z' fill='%2335d1b2'/%3E%3C/svg%3E">
+  <style>:root{--navy:#0b1739;--navy2:#17244a;--teal:#15977f;--mint:#35d1b2;--bg:#f4f6fa;--white:#fff;--line:#dce2ec;--muted:#66718a;--text:#101b3a;--red:#b53b50;--redbg:#fff0f2;--amber:#93600b;--amberbg:#fff6dc;--green:#13735d;--greenbg:#e8f8f2;--blue:#315da7;--bluebg:#eef4ff;--shadow:0 10px 30px rgba(11,23,57,.07);--radius:16px}
+*{box-sizing:border-box}html{font-size:16px}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}body:has(.modal-backdrop.open),body:has(.drawer-backdrop.open){overflow:hidden}button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}.hidden{display:none!important}.app-shell{min-height:100vh;display:grid;grid-template-columns:244px minmax(0,1fr)}
+.sidebar{position:sticky;top:0;height:100vh;background:var(--navy);color:#fff;padding:24px 18px;display:flex;flex-direction:column;z-index:40}.brand{display:flex;align-items:center;gap:11px;padding:0 6px}.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(145deg,var(--mint),var(--teal));color:var(--navy);display:grid;place-items:center;font-weight:900}.brand strong{display:block;font-size:.98rem}.brand span{display:block;color:#aab5ce;font-size:.75rem;margin-top:1px}.sidebar nav{display:grid;gap:5px;margin-top:32px}.nav-item{border:0;background:transparent;color:#b7c0d6;padding:11px 12px;border-radius:10px;text-align:left;font-size:.88rem;font-weight:680;display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:5px}.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.09);color:#fff}.nav-item.active{box-shadow:inset 3px 0 var(--mint)}.nav-item b{font-size:.69rem;background:rgba(255,255,255,.11);padding:2px 7px;border-radius:999px}.boundary-card{margin-top:auto;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);border-radius:13px;padding:13px}.status-line{font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mint);display:flex;align-items:center;gap:7px}.status-line i{width:7px;height:7px;border-radius:50%;background:var(--mint)}.boundary-card p{font-size:.75rem;color:#b7c0d6;margin:8px 0 0}
+main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px}.title-wrap{display:flex;align-items:center;gap:10px}.title-wrap h1{margin:0;font-size:1.16rem;letter-spacing:-.02em}.title-wrap p{margin:2px 0 0;color:var(--muted);font-size:.78rem}.top-actions,.toolbar-actions{display:flex;gap:8px;align-items:center}.main-content{padding:24px 28px 48px;max-width:1600px;margin:auto}.view{display:none}.view.active{display:block}
+.btn{border:1px solid var(--line);border-radius:10px;padding:9px 13px;background:#fff;color:var(--text);font-weight:750;font-size:.82rem}.btn:hover{border-color:#a9b6cc}.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}.btn.accent{background:var(--mint);border-color:var(--mint);color:var(--navy)}.btn.danger{background:var(--red);border-color:var(--red);color:#fff}.btn.small{padding:6px 9px;font-size:.73rem}.btn:disabled{opacity:.45;cursor:not-allowed}.icon-btn{border:0;background:transparent;color:var(--muted);width:36px;height:36px;border-radius:9px;font-size:1.2rem}.icon-btn:hover{background:#eef1f6}.menu-btn{display:none}.text-btn{border:0;background:transparent;color:var(--blue);font-size:.78rem;font-weight:780;padding:4px}.text-btn:hover{text-decoration:underline}
+.integration-banner{border:1px solid #cad9f4;background:var(--bluebg);border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.integration-banner strong{font-size:.8rem;margin-right:9px;color:#294f91}.integration-banner span{font-size:.78rem;color:#536581}.metric-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:0 5px 16px rgba(11,23,57,.035)}.metric span{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:780}.metric b{display:block;font-size:1.65rem;line-height:1.15;margin:6px 0 2px;letter-spacing:-.04em}.metric small{color:var(--muted);font-size:.7rem}.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}.card-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.card-head h2,.section-toolbar h2{margin:0;font-size:.98rem}.card-head p,.section-toolbar p{margin:3px 0 0;color:var(--muted);font-size:.76rem}.workflow-card{margin-bottom:16px}.workflow{padding:16px 18px;display:grid;grid-template-columns:repeat(9,minmax(82px,1fr));gap:7px}.workflow button{border:1px solid var(--line);background:#fafbfd;border-radius:11px;min-height:72px;padding:9px;text-align:left;position:relative}.workflow button:hover,.workflow button.active{background:var(--navy);border-color:var(--navy);color:#fff}.workflow button strong{display:block;font-size:.72rem}.workflow button span{display:block;color:var(--muted);font-size:.65rem;margin-top:4px}.workflow button:hover span,.workflow button.active span{color:#c1cadc}.step-num{width:22px;height:22px;border-radius:7px;background:#e9edf5;display:grid!important;place-items:center;color:var(--text)!important;font-weight:850;margin:0 0 7px!important}.workflow button.active .step-num{background:var(--mint)}.dashboard-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-bottom:16px}.action-list{padding:5px 18px 13px}.action-item{display:grid;grid-template-columns:33px 1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #edf0f5}.action-item:last-child{border-bottom:0}.action-icon{width:30px;height:30px;border-radius:9px;background:var(--amberbg);color:var(--amber);display:grid;place-items:center;font-weight:900}.action-item b{font-size:.78rem;display:block}.action-item span{font-size:.69rem;color:var(--muted)}.control-list{padding:8px 18px 14px}.control-list>div{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf0f5;font-size:.76rem}.control-list>div:last-child{border-bottom:0}.control-list span{color:var(--muted)}.control-list b{font-size:.75rem}
+.section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters input,.filters select{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;color:var(--text);font-size:.8rem}.filters input{min-width:250px}.table-card{min-height:180px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:820px}th,td{text-align:left;padding:12px 13px;border-bottom:1px solid #edf0f5;vertical-align:middle}th{font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#fbfcfe;white-space:nowrap}td{font-size:.75rem}tbody tr:hover{background:#fafcfe}.cell-title{font-weight:780;font-size:.77rem;max-width:350px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cell-sub{display:block;color:var(--muted);font-size:.68rem;margin-top:3px}.rating{font-weight:850;color:#e08320}.tag{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:.66rem;font-weight:800;white-space:nowrap}.tag.success{color:var(--green);background:var(--greenbg)}.tag.warning{color:var(--amber);background:var(--amberbg)}.tag.danger{color:var(--red);background:var(--redbg)}.tag.info{color:var(--blue);background:var(--bluebg)}.tag.neutral{color:#58647c;background:#eef1f6}.empty-state{padding:44px 20px;text-align:center}.empty-state strong{display:block;font-size:.9rem}.empty-state span{display:block;color:var(--muted);font-size:.76rem;margin-top:4px}.row-actions{display:flex;gap:5px;justify-content:flex-end}.kebab{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-weight:800}.policy-health{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}.health-item{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 14px}.health-item b{display:block;font-size:1.2rem}.health-item span{font-size:.7rem;color:var(--muted)}.source-note{font-size:.75rem;color:#5b657a;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:13px}.implementation-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.feature-list{columns:2;gap:30px;padding:8px 35px 20px;margin:0}.feature-list li{break-inside:avoid;margin:10px 0;font-size:.77rem;color:#4e5970}.connection-list{list-style:none;padding:9px 18px 18px;margin:0;counter-reset:connections}.connection-list li{counter-increment:connections;display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #edf0f5}.connection-list li:before{content:counter(connections);width:28px;height:28px;border-radius:9px;background:var(--bluebg);color:var(--blue);display:grid;place-items:center;font-weight:850;font-size:.73rem;grid-row:1/3}.connection-list b{font-size:.76rem}.connection-list span{grid-column:2;color:var(--muted);font-size:.7rem}.roadmap-card{margin-bottom:16px}.roadmap{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:17px}.roadmap article{border:1px solid var(--line);border-radius:13px;padding:14px}.roadmap small{text-transform:uppercase;color:var(--teal);font-weight:800;font-size:.65rem;letter-spacing:.06em}.roadmap h3{font-size:.84rem;margin:5px 0}.roadmap p{font-size:.72rem;color:var(--muted);min-height:62px}.roadmap b{font-size:.69rem}.decision-card{border-radius:var(--radius);background:var(--navy);color:#fff;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;gap:20px}.decision-card h2{font-size:1rem;margin:0}.decision-card p{font-size:.76rem;color:#c1cadc;margin:5px 0 0;max-width:850px}
+.modal-backdrop,.drawer-backdrop{position:fixed;inset:0;background:rgba(7,16,39,.62);z-index:80;display:none}.modal-backdrop.open,.drawer-backdrop.open{display:grid}.modal-backdrop{place-items:center;padding:18px}.modal{width:min(720px,100%);max-height:92vh;background:#fff;border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}.modal>header,.drawer>header{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.modal h2,.drawer h2{font-size:1rem;margin:0}.modal header p,.drawer header p{margin:3px 0 0;color:var(--muted);font-size:.72rem}.modal-body{padding:18px;overflow:auto}.modal>footer{padding:13px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:#fbfcfe}.drawer-backdrop{justify-items:end}.drawer{height:100%;width:min(640px,100%);background:#fff;box-shadow:-20px 0 60px rgba(0,0,0,.2);display:flex;flex-direction:column}.drawer-body{padding:18px;overflow:auto}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:.69rem;font-weight:780;color:#4d5970}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;color:var(--text);font-size:.78rem}.field textarea{min-height:90px;resize:vertical}.field small{font-size:.65rem;color:var(--muted)}.drop-zone{border:2px dashed #c6cfde;border-radius:13px;padding:24px;text-align:center;background:#fafbfd}.drop-zone p{font-size:.72rem;color:var(--muted)}.modal-note{font-size:.7rem;color:var(--muted);margin-top:10px}.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.export-option{border:1px solid var(--line);border-radius:12px;padding:13px;text-align:left;background:#fff}.export-option:hover{border-color:var(--teal)}.export-option b{display:block;font-size:.78rem}.export-option span{display:block;font-size:.68rem;color:var(--muted);margin-top:4px}.detail-section{border:1px solid var(--line);border-radius:13px;margin-bottom:12px;overflow:hidden}.detail-section>header{padding:11px 13px;background:#fafbfd;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.detail-section>header h3{font-size:.78rem;margin:0}.detail-content{padding:13px}.quote{border-left:3px solid var(--teal);background:#f5f8fb;padding:10px 12px;border-radius:0 9px 9px 0;font-size:.76rem}.checklist{display:grid;gap:7px}.check-row{display:flex;align-items:flex-start;gap:8px;font-size:.74rem}.check-row input{margin-top:3px}.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.analysis-box{border:1px solid var(--line);border-radius:10px;padding:10px}.analysis-box label{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}.analysis-box b{display:block;font-size:.74rem;margin-top:4px}.draft-area{width:100%;min-height:230px;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:.76rem;line-height:1.55}.action-bar{position:sticky;bottom:-18px;background:#fff;border-top:1px solid var(--line);padding:12px 0 0;display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}.audit-list{list-style:none;padding:0;margin:0}.audit-list li{padding:8px 0;border-bottom:1px solid #edf0f5;font-size:.7rem}.audit-list time{color:var(--muted);display:block;font-size:.64rem}.danger-zone{border-color:#f0cbd2}.danger-zone>header{background:var(--redbg)}.toast{position:fixed;right:22px;bottom:22px;z-index:120;background:var(--navy);color:#fff;padding:11px 14px;border-radius:10px;box-shadow:var(--shadow);font-size:.76rem;opacity:0;transform:translateY(70px);transition:.24s}.toast.show{opacity:1;transform:translateY(0)}
+.modal{min-height:0}.modal>header,.drawer>header{flex:0 0 auto;background:#fff;z-index:12}.modal-body{min-height:0;overflow-y:auto;overscroll-behavior:contain}.modal>footer{flex:0 0 auto}.drawer{height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}.drawer-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}.drawer-body::-webkit-scrollbar{width:10px}.drawer-body::-webkit-scrollbar-track{background:#f1f3f7}.drawer-body::-webkit-scrollbar-thumb{background:#aeb9ca;border-radius:999px;border:2px solid #f1f3f7}.drawer-footer{flex:0 0 auto;border-top:1px solid var(--line);background:#fff;padding:10px 14px;box-shadow:0 -10px 22px rgba(11,23,57,.09)}.drawer-actions{display:flex;flex-wrap:wrap;gap:7px}.next-step{display:grid;gap:2px;border-left:3px solid var(--teal);padding:3px 0 5px 9px;margin-bottom:9px}.next-step b{font-size:.72rem}.next-step span{font-size:.69rem;color:var(--muted)}.automation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}.automation-body{padding:13px 18px 18px}.automation-body ol,.automation-body ul{margin:0 0 15px;padding-left:19px}.automation-body li{font-size:.77rem;color:#4e5970;margin:8px 0}.automation-guide{margin-bottom:16px}
+@media(max-width:1180px){.metric-grid{grid-template-columns:repeat(3,1fr)}.workflow{grid-template-columns:repeat(5,1fr)}.dashboard-grid,.implementation-grid,.automation-grid{grid-template-columns:1fr}.roadmap{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:780px){.app-shell{display:block}.sidebar{position:fixed;left:0;top:0;bottom:0;width:244px;transform:translateX(-100%);transition:.22s}.sidebar.open{transform:translateX(0)}.menu-btn{display:inline-grid;place-items:center}.topbar{height:auto;min-height:72px;padding:12px 14px}.title-wrap p{display:none}.top-actions .secondary{display:none}.main-content{padding:17px 13px 38px}.metric-grid{grid-template-columns:1fr 1fr}.workflow{display:flex;overflow:auto}.workflow button{min-width:112px}.section-toolbar{align-items:stretch;flex-direction:column}.filters input,.filters select{width:100%;min-width:0}.toolbar-actions{justify-content:stretch}.toolbar-actions .btn{flex:1}.integration-banner{align-items:flex-start}.integration-banner span{display:block;margin-top:3px}.policy-health{grid-template-columns:1fr}.form-grid,.export-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.feature-list{columns:1}.decision-card{align-items:flex-start;flex-direction:column}}
+@media(max-width:480px){.metric-grid{grid-template-columns:1fr}.topbar .primary{font-size:0;padding:9px 12px}.topbar .primary:after{content:"+";font-size:1rem}.roadmap{grid-template-columns:1fr}.analysis-grid{grid-template-columns:1fr}}
+
+/* v5 additions */
+.pill{display:inline-block;font-size:.62rem;font-weight:800;padding:2px 7px;border-radius:999px;background:#eef1f6;color:#3a4560;margin-right:3px}
+.pill.warn{background:var(--amberbg);color:var(--amber)}
+.approver-block{border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:9px;background:#fbfcfe}
+.approver-block h4{margin:0 0 8px;font-size:.75rem}
+.btn.success{background:var(--green);border-color:var(--green);color:#fff}
+.settings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;padding:16px 18px}
+.settings-grid .field.full{grid-column:1/-1}
+.settings-actions{padding:14px 18px;display:flex;gap:8px;flex-wrap:wrap}
+.metric-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media(max-width:1180px){.metric-grid{grid-template-columns:repeat(3,1fr)}.settings-grid{grid-template-columns:1fr}}
+@media(max-width:780px){.metric-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark">AR</div><div><strong>Review Ops</strong><span>Amazon case control · v5</span></div></div>
+      <nav id="mainNav" aria-label="Primary navigation">
+        <button class="nav-item active" data-view="dashboard"><span>▦</span> Dashboard</button>
+        <button class="nav-item" data-view="reviews"><span>≡</span> Review queue <b id="navReviewCount">0</b></button>
+        <button class="nav-item" data-view="cases"><span>□</span> Case tracker <b id="navCaseCount">0</b></button>
+        <button class="nav-item" data-view="policy"><span>✓</span> Policy register</button>
+        <button class="nav-item" data-view="protected"><span>⛨</span> Protected ASINs <b id="navProtectedCount">0</b></button>
+        <button class="nav-item" data-view="audit"><span>◷</span> Audit log</button>
+        <button class="nav-item" data-view="settings"><span>⚙</span> Settings</button>
+        <button class="nav-item" data-view="automation"><span>⇄</span> Automation</button>
+        <button class="nav-item" data-view="implementation"><span>↗</span> Implementation</button>
+      </nav>
+      <div class="boundary-card"><div class="status-line"><i></i> Local working version</div><p>Records persist in this browser only. Amazon collection and Seller Central submission are not connected.</p></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="title-wrap"><button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">☰</button><div><h1 id="pageTitle">Operations dashboard</h1><p id="pageSubtitle">Collect, screen, classify, route, validate, approve, draft, submit, monitor, close</p></div></div>
+        <div class="top-actions"><button class="btn secondary" id="loadTestSetBtn">Load test set</button><button class="btn secondary" id="exportBtn">Export</button><button class="btn secondary" id="importBtn">Import</button><button class="btn primary" id="newReviewBtn">+ Add review</button></div>
+      </header>
+
+      <div class="main-content">
+        <section class="view active" id="view-dashboard">
+          <div class="integration-banner"><div><strong>Production boundary</strong><span>The full internal workflow works here. Live collection and Amazon submission require approved credentials and account access.</span></div><button class="text-btn" data-go="implementation">See connection plan</button></div>
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="card workflow-card">
+            <div class="card-head"><div><h2>Workflow control</h2><p>Each stage has a clear system or human owner. A stage is blocked if the prior stage is not complete.</p></div><span class="tag neutral" id="workflowMessage">Select a stage</span></div>
+            <div class="workflow" id="workflow"></div>
+          </div>
+          <div class="dashboard-grid">
+            <div class="card"><div class="card-head"><div><h2>Action required</h2><p>Records that need attention now</p></div><button class="text-btn" data-go="reviews">Open queue</button></div><div id="actionList" class="action-list"></div></div>
+            <div class="card"><div class="card-head"><div><h2>Pilot controls</h2><p>Current operating limits · <button class="text-btn" data-go="settings">Change</button></p></div></div><div class="control-list" id="pilotControls"></div></div>
+          </div>
+          <div class="card"><div class="card-head"><div><h2>Recent case activity</h2><p>Latest changes across approved and submitted records</p></div><button class="text-btn" data-go="cases">View all cases</button></div><div class="table-wrap"><table><thead><tr><th>Case</th><th>ASIN / Brand / MP</th><th>Policy heading</th><th>Status</th><th>Submitter</th><th>Updated</th></tr></thead><tbody id="recentCases"></tbody></table></div></div>
+        </section>
+
+        <section class="view" id="view-reviews">
+          <div class="section-toolbar">
+            <div class="filters">
+              <input id="reviewSearch" type="search" placeholder="Search text, ASIN, brand, ID…">
+              <select id="reviewStatusFilter"><option value="all">All workflow states</option><option value="new">New</option><option value="screened">Screened</option><option value="blocked">Blocked</option><option value="routed">Routed (non-removal)</option><option value="validated">Validated</option><option value="approved">Approved</option><option value="drafted">Drafted</option></select>
+              <select id="reviewVerdictFilter"><option value="all">All verdicts</option><option value="clear_violation">CLEAR POLICY VIOLATION</option><option value="hold">HOLD</option><option value="not_eligible">NOT ELIGIBLE</option><option value="unclassified">Unclassified</option></select>
+              <select id="reviewBrandFilter"><option value="all">All brands</option></select>
+              <select id="reviewMarketplaceFilter"><option value="all">All marketplaces</option></select>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn secondary" id="downloadReviewTemplate">Download import template</button>
+              <button class="btn secondary" id="bulkAnalyzeBtn">Analyze selected</button>
+            </div>
+          </div>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="selectAllReviews" aria-label="Select all reviews"></th><th>Review</th><th>ASIN / Brand / MP</th><th>Rating</th><th>Verdict / Block</th><th>Workflow</th><th>Updated</th><th></th></tr></thead><tbody id="reviewTableBody"></tbody></table></div><div class="empty-state hidden" id="reviewsEmpty"><strong>No reviews match this view</strong><span>Clear the filters or add a new review.</span></div></div>
+        </section>
+
+        <section class="view" id="view-cases">
+          <div class="section-toolbar"><div class="filters"><input id="caseSearch" type="search" placeholder="Search case, ASIN, reference, submitter…"><select id="caseStatusFilter"><option value="all">All case statuses</option><option value="draft">Draft</option><option value="ready">Ready to submit</option><option value="submitted">Submitted</option><option value="monitoring">Monitoring</option><option value="closed">Closed</option></select></div><div class="toolbar-actions"><button class="btn secondary" id="downloadCaseTemplate">Download case template</button><button class="btn secondary" id="exportCasesBtn">Export cases CSV</button></div></div>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Case ID</th><th>ASIN / Brand / MP</th><th>Policy heading</th><th>Approvals</th><th>Status</th><th>Submitter</th><th>Amazon reference</th><th>Next action</th><th></th></tr></thead><tbody id="caseTableBody"></tbody></table></div><div class="empty-state hidden" id="casesEmpty"><strong>No cases yet</strong><span>Validate a candidate review and generate its case draft.</span></div></div>
+        </section>
+
+        <section class="view" id="view-policy">
+          <div class="section-toolbar"><div><h2>Controlled policy register</h2><p>Only active, current, marketplace-scoped entries can be used in a case draft.</p></div><button class="btn primary" id="addPolicyBtn">+ Add policy entry</button></div>
+          <div class="policy-health" id="policySummary"></div>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Policy heading</th><th>Marketplace</th><th>Detection guidance</th><th>Exclusions</th><th>Official source</th><th>Last checked</th><th>Owner</th><th>Status</th><th></th></tr></thead><tbody id="policyTableBody"></tbody></table></div></div>
+          <div class="source-note"><strong>Important:</strong> the live Amazon page and the route available in the account must be checked immediately before submission. A saved policy entry is not a substitute for that check.</div>
+        </section>
+
+        <section class="view" id="view-protected">
+          <div class="section-toolbar"><div><h2>Protected ASIN register</h2><p>Products in launch-candidate, compliance-sensitive, catalog-sensitive, or leadership-protected status. Screening blocks any review on these ASINs before classification.</p></div><div class="toolbar-actions"><button class="btn secondary" id="importAsinsBtn">Import from Master File</button><button class="btn primary" id="addProtectedBtn">+ Add protected ASIN</button></div></div>
+          <div class="policy-health" id="protectedSummary"></div>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>ASIN</th><th>Parent</th><th>Brand</th><th>Marketplace</th><th>Reason</th><th>Owner</th><th>Protected from</th><th>Release date</th><th>Status</th><th></th></tr></thead><tbody id="protectedTableBody"></tbody></table></div></div>
+        </section>
+
+        <section class="view" id="view-audit">
+          <div class="section-toolbar"><div><h2>Audit log</h2><p>Append-only record of every state change, approval, submission, and closure across this browser instance.</p></div><div class="toolbar-actions"><input id="auditSearch" type="search" placeholder="Filter by entity, actor, event…"><button class="btn secondary" id="exportAuditBtn">Export audit CSV</button></div></div>
+          <div class="card table-card"><div class="table-wrap"><table><thead><tr><th>When</th><th>Entity</th><th>Event</th><th>Actor</th><th>Before → After</th><th>Comment</th></tr></thead><tbody id="auditTableBody"></tbody></table></div><div class="empty-state hidden" id="auditEmpty"><strong>No audit entries yet</strong><span>Actions on reviews, cases, policies, and settings will land here.</span></div></div>
+        </section>
+
+        <section class="view" id="view-settings">
+          <div class="section-toolbar"><div><h2>Settings</h2><p>Central control for cap, marketplaces, observation days, follow-ups, owners, notifications, and version stamp. Every change lands in the audit log.</p></div><div class="toolbar-actions"><button class="btn primary" id="saveSettingsBtn">Save settings</button></div></div>
+          <div class="card"><div class="settings-grid" id="settingsGrid"></div></div>
+          <div class="card"><div class="card-head"><div><h2>Owners</h2><p>Named people accountable for each role. At least one AB and one Brand Manager per active brand.</p></div><button class="btn secondary" id="addOwnerBtn">+ Add owner</button></div><div class="table-wrap"><table><thead><tr><th>Role</th><th>Name</th><th>Brand scope</th><th>Marketplaces</th><th></th></tr></thead><tbody id="ownersTableBody"></tbody></table></div></div>
+          <div class="card"><div class="card-head"><div><h2>Google Sheets sync</h2><p>Pull directly from the Master File — auto-detects columns and imports reviews / ASIN catalogue / protected ASINs.</p></div><div class="toolbar-actions"><button class="btn secondary" id="appsScriptBtn">Apps Script setup</button><button class="btn secondary" id="addSyncBtn">+ Add config</button><button class="btn primary" id="syncAllBtn">Sync all</button></div></div><div class="table-wrap"><table><thead><tr><th>Config</th><th>Tab / MP</th><th>Mode</th><th>Last sync</th><th></th></tr></thead><tbody id="sheetSyncsBody"></tbody></table></div><div class="source-note" style="margin:12px 18px 16px"><b>Direct fetch works from your own host (e.g. chatgpt.site)</b> when the sheet is shared "Anyone with the link — Viewer". <b>Fails from sandboxed previews</b> (like the claude.ai artifact) because Google refuses CORS to null origins — for that case, use the <b>Apps Script setup</b> button to install a proxy in the sheet itself. Click any Error chip for full diagnostics.</div></div>
+          <div class="card"><div class="card-head"><div><h2>Reset / restore</h2><p>Danger zone. Every action here is audited.</p></div></div><div class="settings-actions"><button class="btn secondary" id="clearAllReviewsBtn">Clear all reviews & cases</button><button class="btn danger" id="factoryResetBtn">Factory reset (wipe everything)</button></div></div>
+        </section>
+
+        <section class="view" id="view-implementation">
+          <div class="implementation-grid">
+            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5, matches Final Proposal spec)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>Marketplace-scoped policies with exclusions</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, 1 follow-up</li><li>Append-only audit log with CSV export</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
+            <div class="card"><div class="card-head"><div><h2>Production connections</h2><p>Required for a shared live system</p></div><span class="tag warning">Not connected</span></div><ol class="connection-list"><li><b>Approved review source</b><span>Connect Helium10 review-insights CSV export, Brand Registry email alerts (Gmail Apps Script parser), or scheduled file delivery.</span></li><li><b>Shared database</b><span>Replace browser storage with controlled, multi-user records and backups.</span></li><li><b>User identity</b><span>Map AB, brand managers, submitters, and audit permissions to real accounts.</span></li><li><b>Notification channel</b><span>Send approval and overdue-monitoring alerts to the approved workspace.</span></li><li><b>Seller Central handoff</b><span>Keep final submission manual until Amazon authorizes a supported integration.</span></li></ol></div>
+          </div>
+          <div class="card roadmap-card"><div class="card-head"><div><h2>Controlled rollout</h2><p>Progress only after the prior phase passes its acceptance check.</p></div></div><div class="roadmap"><article><small>Phase 0</small><h3>Validate</h3><p>Policy register, protected ASINs, schema, test set, roles, and no submissions.</p><b>Exit: agreed logic</b></article><article><small>Phase 1</small><h3>Pilot</h3><p>Two approvals, maximum three submissions weekly, one follow-up per case.</p><b>Exit: acceptable precision</b></article><article><small>Phase 2</small><h3>Expand</h3><p>Add brands gradually and measure outcomes and false positives.</p><b>Exit: stable controls</b></article><article><small>Phase 3</small><h3>Operate</h3><p>Formal SOP, training, access review, and policy-change audits.</p><b>Exit: operational ownership</b></article></div></div>
+          <div class="decision-card"><div><h2>Decision requested</h2><p>Approve Phase 0 to validate the policy register, protected-ASIN list, test data, and approval roles. Phase 0 does not submit cases to Amazon.</p></div><button class="btn accent" id="approveProposalBtn">Approve Phase 0</button></div>
+        </section>
+
+        <section class="view" id="view-automation">
+          <div class="integration-banner"><div><strong>Recommended pilot: Google Sheets control centre</strong><span>Use the Sheet for shared intake and follow-up. Keep Amazon reporting as a human-controlled handoff.</span></div><button class="text-btn" id="downloadGoogleTemplate">Download Sheets intake CSV</button></div>
+          <div class="automation-grid">
+            <article class="card automation-card"><div class="card-head"><div><h2>1. Collect and validate input</h2><p>Google Sheet rows are checked before entering the queue.</p></div><span class="tag success">Works now</span></div><div class="automation-body"><ol><li>Paste exact source fields into <b>Review Intake</b>.</li><li>Required-column and duplicate checks identify rows that need correction.</li><li>Export the ready rows as CSV and import them here.</li></ol><button class="btn secondary" id="downloadGoogleTemplate2">Download CSV for Google Sheets</button></div></article>
+            <article class="card automation-card"><div class="card-head"><div><h2>2. Route by customer outcome</h2><p>Not every negative review is a removal candidate.</p></div><span class="tag info">Controlled</span></div><div class="automation-body"><ul><li><b>Clear policy signal:</b> human policy validation, then approvals.</li><li><b>Product feedback:</b> quality or listing-improvement task.</li><li><b>Delivery or seller service:</b> operations or customer-experience follow-up.</li><li><b>Unclear:</b> hold for a policy owner.</li></ul></div></article>
+            <article class="card automation-card"><div class="card-head"><div><h2>3. Add independent sync later</h2><p>Requires an approved endpoint and access owner.</p></div><span class="tag warning">Not connected</span></div><div class="automation-body"><ol><li>Apps Script runs on a schedule and reads rows marked <b>Ready</b>.</li><li>It sends only the approved fields to a secured internal endpoint.</li><li>The endpoint returns a receipt and the Sheet records the sync result.</li></ol><p class="modal-note">Do not use a public Sheet link for customer data. Do not automate Amazon submission unless Amazon provides an authorized route.</p></div></article>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><header><div><h2 id="modalTitle"></h2><p id="modalSubtitle"></p></div><button class="icon-btn" id="modalClose" aria-label="Close">×</button></header><div class="modal-body" id="modalBody"></div><footer id="modalFooter"></footer></section></div>
+  <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle"><header><div><h2 id="drawerTitle">Review details</h2><p id="drawerSubtitle"></p></div><button class="icon-btn" id="drawerClose" aria-label="Close">×</button></header><div class="drawer-body" id="drawerBody"></div><footer class="drawer-footer" id="drawerFooter"></footer></aside></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="hiddenFileInput" accept=".csv,.json,text/csv,application/json" hidden>
+  <script>/* Amazon Review Removal Operations — v5
+   Rebuilt against the Final Proposal spec (see Implementation view).
+   Key changes vs v4:
+   - Verdict (CLEAR POLICY VIOLATION / HOLD / NOT ELIGIBLE) split from workflow state
+   - Deterministic screening with named block_reason
+   - Protected ASIN Register with mandatory gate before classification
+   - Marketplace-scoped policies with exclusions (US / CA / MX / BR)
+   - Independent AB + Brand Manager decisions with per-approver timestamp/notes
+   - Named submitter, weekly cap enforcement, 10-day observation, follow-up cap
+   - Case draft: 150-word cap and evidence-quote lock
+   - Append-only audit log with actor / before / after / comment
+   - Settings tab (cap, marketplaces, observation days, follow-ups, owners, notifications, version)
+   - Master File ASIN catalogue import (Brand / Parent / Child / SKU / MP / Product Name)
+   - Load test set button (Phase 0 acceptance data in one click)
+*/
+
+const $=(s,p=document)=>p.querySelector(s);
+const $$=(s,p=document)=>[...p.querySelectorAll(s)];
+const STORAGE_KEY='amazonReviewOps.v5';
+const APP_VERSION='v5.0';
+const today=()=>new Date().toISOString().slice(0,10);
+const now=()=>new Date().toISOString();
+const uid=p=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,6)}`;
+const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const fmtDate=s=>s?new Intl.DateTimeFormat('en',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(s)):'—';
+const fmtDateTime=s=>s?new Intl.DateTimeFormat('en',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(s)):'—';
+const addDays=(date,days)=>{const d=new Date(date);d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)};
+const wordCount=s=>String(s||'').trim().split(/\s+/).filter(Boolean).length;
+const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+const daysSince=d=>d?Math.floor((Date.now()-new Date(d).getTime())/86400000):Infinity;
+
+/* ── enums ─────────────────────────────────────────────────────────── */
+const VERDICTS={clear_violation:'CLEAR POLICY VIOLATION',hold:'HOLD',not_eligible:'NOT ELIGIBLE'};
+const VERDICT_CLASS={clear_violation:'danger',hold:'warning',not_eligible:'neutral'};
+const WORKFLOW_STATES={new:'New',screened:'Screened',blocked:'Blocked',routed:'Routed (non-removal)',validated:'Validated',approved:'Approved',drafted:'Drafted'};
+const WORKFLOW_CLASS={new:'neutral',screened:'info',blocked:'neutral',routed:'info',validated:'info',approved:'success',drafted:'success'};
+const CASE_STATES={draft:'Draft',ready:'Ready to submit',submitted:'Submitted',monitoring:'Monitoring',closed:'Closed'};
+const CASE_CLASS={draft:'info',ready:'success',submitted:'info',monitoring:'warning',closed:'neutral'};
+const BLOCK_REASONS={MISSING_DATA:'Missing required data',REVIEW_REMOVED:'Review already removed at source',PRIOR_FILING:'Prior case already filed for this review',STALE_POLICY:'Referenced policy has not been rechecked in time',PROTECTED_ASIN:'ASIN is on the Protected register',EXCLUSION_MATCH:'Content matches a policy exclusion',NO_MARKETPLACE_MATCH:'No active policy for this marketplace',NO_EVIDENCE_QUOTE:'No exact quote can be extracted from the review'};
+const MARKETPLACES_ALL=['US','CA','MX','BR'];
+
+/* ── seeds ─────────────────────────────────────────────────────────── */
+const seedPolicies=[
+  {id:'POL-PERSONAL',heading:'Personal information',guidance:'Email addresses, phone numbers, physical addresses, or other personal contact details in the review text.',exclusions:'Mentions of the buyer being contacted by the seller (that is a seller-service complaint, not personal information).',keywords:['email address','contact me at','phone number','@'],url:'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:'Amazon Brand Registry > Report a Violation > Other Issues'},
+  {id:'POL-PROMO',heading:'Promotional content',guidance:'External purchase links, advertisements, discount codes, solicitation, or redirection to another seller or website.',exclusions:'Mentions of Amazon-owned URLs; brand mentions without a purchase link.',keywords:['buy from','discount code','use code','http://','https://','.com/','.test/'],url:'https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:'Amazon Brand Registry > Report a Violation > Other Issues'},
+  {id:'POL-SELLER',heading:'Seller, order, or shipping feedback',guidance:'Content focused on the seller, refund, order service, fulfillment, packaging, or shipping instead of the product itself.',exclusions:'Mixed content where the product itself is the primary subject; product quality complaints alongside a shipping mention.',keywords:['seller','refund','delivery','shipping','arrived late','box was','never replied','order service'],url:'https://sellercentral.amazon.com/gp/help/external/G201972140',marketplaces:['US','CA','MX','BR'],lastChecked:today(),owner:'AB',status:'active',route:'Seller Central > Help > Report abuse (Seller feedback removal)'}
+];
+
+const seedProtected=[
+  {asin:'B0FTSVDG77',parent:'B0FTSVDG77',brand:'SLEEPHORIA',marketplace:'US',reason:'Launch-candidate — cooling pillowcase line',owner:'AB',protectedFrom:today(),releaseDate:'',status:'active',lastChecked:today()},
+  {asin:'B0F7M5PNCT',parent:'B0F7M5PNCT',brand:'SLEEPHORIA',marketplace:'US',reason:'Launch-candidate — cooling fitted queen white',owner:'AB',protectedFrom:today(),releaseDate:'',status:'active',lastChecked:today()},
+  {asin:'B0F7M5TVQF',parent:'B0F7M5TVQF',brand:'SLEEPHORIA',marketplace:'US',reason:'Launch-candidate — cooling fitted queen cool grey',owner:'AB',protectedFrom:today(),releaseDate:'',status:'active',lastChecked:today()}
+];
+
+const seedAsinCatalog=[
+  {brand:'DECOLURE',parent:'B08KQKPKWC',child:'B0BZPZ2L1R',sku:'BAMBOO-KING-BLACK',marketplace:'US',productName:'DECOLURE BAMBOO SHEET 4PCS'},
+  {brand:'DECOLURE',parent:'B0D952H31F',child:'B0CQ33H4QW',sku:'BAMBOO-KING-LIGHTGREY-6PCS',marketplace:'US',productName:'DECOLURE BAMBOO SHEET 6PCS'},
+  {brand:'DECOLURE',parent:'B0CRVZ1TTS',child:'B0839LQG4C',sku:'SATIN-QUEEN-PINK',marketplace:'US',productName:'DECOLURE SATIN SHEETS 4PCS'},
+  {brand:'DECOLURE',parent:'B0DZ17NCJ4',child:'B0DBW1PNJ8',sku:'SATIN-FITTED-QUEEN-BLACK',marketplace:'US',productName:'DECOLURE SATIN FITTED SHEET 1PC'},
+  {brand:'SLEEPHORIA',parent:'B0FTSVDG77',child:'B0F7LLM71K',sku:'SL-CLG-PC-LIGHT-GREY-STANDARD-2PCS',marketplace:'US',productName:'SLEEPHORIA COOLING PILLOWCASE 2PCS'},
+  {brand:'SLEEPHORIA',parent:'B0FTSWF3M7',child:'B0F7LYCX4N',sku:'SL-COOLING-SHEET-KING-LIGHT-BLUE',marketplace:'US',productName:'SLEEPHORIA COOLING SHEET 4PCS'},
+  {brand:'SLEEP SANCTUARY',parent:'B0F55Y1P53',child:'B0DDTYWKG7',sku:'SS-BAMBOO-GREY-FULL-6PCS',marketplace:'US',productName:'SLEEP SANCTUARY BAMBOO SHEET 6PCS'},
+  {brand:'SLEEP SANCTUARY',parent:'B0F2G983W3',child:'B0DDRGZYZD',sku:'SS-SATIN-DARK-GREEN-QUEEN-4PCS',marketplace:'US',productName:'SLEEP SANCTUARY SATIN SHEET 4PCS'},
+  {brand:'BAMBOO RESERVE',parent:'B0EXAMPLE7',child:'B0EXAMPLE7',sku:'BR-EXAMPLE',marketplace:'US',productName:'BAMBOO RESERVE (example placeholder)'},
+  {brand:'DECOLURE',parent:'B08KQKPKWC',child:'B0BZPZ2L1R',sku:'BAMBOO-KING-BLACK',marketplace:'CA',productName:'DECOLURE BAMBOO SHEET 4PCS'},
+  {brand:'SLEEPHORIA',parent:'B0FTSWF3M7',child:'B0F7LYCX4N',sku:'SL-COOLING-SHEET-KING-LIGHT-BLUE',marketplace:'CA',productName:'SLEEPHORIA COOLING SHEET 4PCS'}
+];
+
+const seedOwners=[
+  {role:'AB',name:'AB',brands:['ALL'],marketplaces:['US','CA','MX','BR']},
+  {role:'Brand Manager',name:'Umer Shahid',brands:['DECOLURE'],marketplaces:['US','CA']},
+  {role:'Brand Manager',name:'Ahmad Ilyas',brands:['BAMBOO RESERVE','SLEEP SANCTUARY'],marketplaces:['US','CA']},
+  {role:'Brand Manager',name:'',brands:['SLEEPHORIA'],marketplaces:['US','CA']},
+  {role:'Submitter',name:'',brands:['ALL'],marketplaces:['US','CA','MX','BR']}
+];
+
+const MASTER_SHEET_ID='10ZF01GX9CSdUCoLuknafA9sZOR1pgyBzQSWAMrNtFI4';
+
+const seedSheetSyncs=[
+  {id:'SYNC-US',name:'Master File — US Reviews (last 7 days)',sheetId:MASTER_SHEET_ID,tabName:'US',mode:'reviews',defaultMarketplace:'US',range:'',sinceDaysBack:7,rowLimit:500,columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:''},
+  {id:'SYNC-CA',name:'Master File — Canada Reviews (last 7 days)',sheetId:MASTER_SHEET_ID,tabName:'Canada',mode:'reviews',defaultMarketplace:'CA',range:'',sinceDaysBack:7,rowLimit:500,columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:''},
+  {id:'SYNC-MX',name:'Master File — Mexico Reviews (last 7 days)',sheetId:MASTER_SHEET_ID,tabName:'Mexico',mode:'reviews',defaultMarketplace:'MX',range:'',sinceDaysBack:7,rowLimit:500,columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:''},
+  {id:'SYNC-BR',name:'Master File — Brazil Reviews (last 7 days)',sheetId:MASTER_SHEET_ID,tabName:'Brazil',mode:'reviews',defaultMarketplace:'BR',range:'',sinceDaysBack:7,rowLimit:500,columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:''},
+  {id:'SYNC-SKU',name:'Master File — SKU LIST (needs brand mapping)',sheetId:MASTER_SHEET_ID,tabName:'SKU LIST',mode:'asins',defaultMarketplace:'US',range:'',sinceDaysBack:0,rowLimit:0,columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:''}
+];
+
+const seedTestReviews=[
+  {reviewId:'R-TEST-001',sourceRef:'https://amazon.example/review/R-TEST-001',asin:'B0BZPZ2L1R',brand:'DECOLURE',marketplace:'US',rating:1,title:'Refund demand and seller-service complaint',text:'The item is fine, but the seller refused my refund and never replied. Contact me at buyer.name@example.com.',reviewDate:'2026-09-18'},
+  {reviewId:'R-TEST-002',sourceRef:'https://amazon.example/review/R-TEST-002',asin:'B0CQ33H4QW',brand:'DECOLURE',marketplace:'US',rating:2,title:'Delivery delay only',text:'Arrived six days late. The box was crushed, although the product still works.',reviewDate:'2026-09-18'},
+  {reviewId:'R-TEST-003',sourceRef:'https://amazon.example/review/R-TEST-003',asin:'B0839LQG4C',brand:'DECOLURE',marketplace:'US',rating:1,title:'Product performance complaint',text:'Stopped working after two weeks and feels much cheaper than the photos.',reviewDate:'2026-09-17'},
+  {reviewId:'R-TEST-004',sourceRef:'https://amazon.example/review/R-TEST-004',asin:'B0DBW1PNJ8',brand:'DECOLURE',marketplace:'US',rating:1,title:'Promotional link in review',text:'Ignore this one and buy the cheaper version from example-shop.test/deal instead.',reviewDate:'2026-09-17'},
+  {reviewId:'R-TEST-005',sourceRef:'https://amazon.example/review/R-TEST-005',asin:'B0F7LLM71K',brand:'SLEEPHORIA',marketplace:'US',rating:1,title:'Phone number included in complaint (PROTECTED ASIN parent)',text:'The sheets were acceptable, but support never called me back. My phone number is +1 555 010 8844.',reviewDate:'2026-09-16'},
+  {reviewId:'R-TEST-006',sourceRef:'https://amazon.example/review/R-TEST-006',asin:'B0DDRGZYZD',brand:'SLEEP SANCTUARY',marketplace:'US',rating:1,title:'External store promotion',text:'Use discount code SAVE20 and buy from deals.example.com/sheets because this listing costs more.',reviewDate:'2026-09-16'},
+  {reviewId:'R-TEST-007',sourceRef:'https://amazon.example/review/R-TEST-007',asin:'B0EXAMPLE7',brand:'BAMBOO RESERVE',marketplace:'US',rating:1,title:'Refund service complaint',text:'The product was not the issue. The seller refused my refund and customer service never replied.',reviewDate:'2026-09-15'},
+  {reviewId:'R-TEST-008',sourceRef:'https://amazon.example/review/R-TEST-008',asin:'B0F7LYCX4N',brand:'SLEEPHORIA',marketplace:'CA',rating:2,title:'Packaging and delivery damage (CA marketplace)',text:'Delivery was late and the package arrived damaged.',reviewDate:'2026-09-15'},
+  {reviewId:'R-TEST-009',sourceRef:'https://amazon.example/review/R-TEST-009',asin:'B0BZPZ2L1R',brand:'DECOLURE',marketplace:'US',rating:2,title:'Fit and fabric complaint',text:'The fit is poor and the fabric feels thin.',reviewDate:'2026-09-14'},
+  {reviewId:'R-TEST-010',sourceRef:'https://amazon.example/review/R-TEST-010',asin:'B0CQ33H4QW',brand:'DECOLURE',marketplace:'MX',rating:1,title:'New review awaiting analysis (MX marketplace)',text:'Please email me at review.test@example.com with a replacement.',reviewDate:'2026-09-14'}
+];
+
+/* ── state ─────────────────────────────────────────────────────────── */
+let state=loadState();
+let selectedReviews=new Set();
+let activeReviewId=null,activeCaseId=null;
+
+function loadState(){
+  try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));if(saved?.version===5){if(!Array.isArray(saved.sheetSyncs))saved.sheetSyncs=structuredClone(seedSheetSyncs);return saved}}catch(e){}
+  return {
+    version:5,
+    reviews:[],
+    cases:[],
+    policies:structuredClone(seedPolicies),
+    protectedAsins:structuredClone(seedProtected),
+    asinCatalog:structuredClone(seedAsinCatalog),
+    owners:structuredClone(seedOwners),
+    auditLog:[],
+    sheetSyncs:structuredClone(seedSheetSyncs),
+    settings:{
+      weeklyCap:3,
+      observationDays:10,
+      followUpMax:1,
+      stalenessDays:30,
+      marketplaces:['US','CA','MX','BR'],
+      notificationChannel:'',
+      scriptVersion:APP_VERSION,
+      proposalApproved:false
+    },
+    updatedAt:now()
+  };
+}
+function saveState(){state.updatedAt=now();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
+
+/* ── audit log ─────────────────────────────────────────────────────── */
+function logAudit(entityType,entityId,event,actor='system',before='',after='',comment=''){
+  state.auditLog.unshift({id:uid('LOG'),at:now(),entityType,entityId,event,actor,before:String(before||''),after:String(after||''),comment:String(comment||'')});
+}
+function toast(message){const t=$('#toast');t.textContent=message;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),3000)}
+
+/* ── helpers ───────────────────────────────────────────────────────── */
+function policyById(id){return state.policies.find(p=>p.id===id)}
+function caseForReview(id){return state.cases.find(c=>c.reviewId===id)}
+function isPolicyFresh(p){if(!p||p.status!=='active'||!p.lastChecked)return false;return daysSince(p.lastChecked)<=state.settings.stalenessDays}
+function isProtected(asin,marketplace){
+  const cat=state.asinCatalog.find(a=>a.child===asin&&(a.marketplace===marketplace||!marketplace));
+  const parentOfAsin=cat?.parent;
+  return state.protectedAsins.some(x=>{
+    if(x.status!=='active')return false;
+    if(x.marketplace!==marketplace&&x.marketplace!=='ALL')return false;
+    if(x.asin===asin||x.parent===asin)return true;
+    if(parentOfAsin&&(x.asin===parentOfAsin||x.parent===parentOfAsin))return true;
+    return false;
+  });
+}
+function priorCaseFor(reviewIdText){return state.cases.find(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return r?.reviewId&&r.reviewId===reviewIdText&&c.status!=='closed'})}
+function duplicateOf(item,ignoreId=''){return state.reviews.find(r=>r.id!==ignoreId&&((item.reviewId&&r.reviewId===item.reviewId)||(item.sourceRef&&r.sourceRef===item.sourceRef)||(r.asin===item.asin&&r.marketplace===item.marketplace&&r.text.trim().toLowerCase()===item.text.trim().toLowerCase())))}
+function nextReviewId(){const nums=state.reviews.map(r=>Number(String(r.id).replace(/\D/g,''))).filter(Number.isFinite);return `REV-${Math.max(1000,...nums)+1}`}
+function nextCaseId(){const nums=state.cases.map(c=>Number(String(c.id).replace(/\D/g,''))).filter(Number.isFinite);return `CASE-${today().replaceAll('-','')}-${String(Math.max(0,...nums.map(n=>n%1000))+1).padStart(3,'0')}`}
+function brandsInUse(){return [...new Set([...state.reviews.map(r=>r.brand),...state.asinCatalog.map(a=>a.brand)].filter(Boolean))].sort()}
+
+/* ── deterministic screening + classifier (reject-first) ───────────── */
+function screenReview(r){
+  const missing=[];['asin','brand','marketplace','text','reviewDate'].forEach(k=>{if(!r[k]||String(r[k]).trim()==='')missing.push(k)});
+  if(!r.rating||r.rating<1||r.rating>5)missing.push('rating');
+  if(missing.length)return {blocked:true,reason:'MISSING_DATA',detail:`Missing: ${missing.join(', ')}`};
+  if(r.sourceRemoved)return {blocked:true,reason:'REVIEW_REMOVED',detail:'Marked as removed at source'};
+  if(isProtected(r.asin,r.marketplace)){const rec=state.protectedAsins.find(x=>(x.asin===r.asin||x.parent===r.asin)&&(x.marketplace===r.marketplace||x.marketplace==='ALL'));return {blocked:true,reason:'PROTECTED_ASIN',detail:`Protected: ${rec?.reason||'launch/candidate/sensitive'}`}}
+  if(r.reviewId){const prior=priorCaseFor(r.reviewId);if(prior)return {blocked:true,reason:'PRIOR_FILING',detail:`Prior case ${prior.id} is still open`}}
+  const applicable=state.policies.filter(p=>p.status==='active'&&(p.marketplaces||[]).includes(r.marketplace));
+  if(!applicable.length)return {blocked:true,reason:'NO_MARKETPLACE_MATCH',detail:`No active policy scoped to ${r.marketplace}`};
+  const stale=applicable.filter(p=>!isPolicyFresh(p));
+  if(stale.length===applicable.length)return {blocked:true,reason:'STALE_POLICY',detail:`All applicable policies are past ${state.settings.stalenessDays}-day recheck`};
+  return {blocked:false};
+}
+
+function classifyReview(r){
+  const text=`${r.title||''} ${r.text||''}`;
+  const applicable=state.policies.filter(p=>p.status==='active'&&isPolicyFresh(p)&&(p.marketplaces||[]).includes(r.marketplace));
+  const email=text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const phone=text.match(/(?:\+?\d[\s().-]*){8,}/);
+  const url=text.match(/(?:https?:\/\/|www\.|[a-z0-9-]+\.(?:com|net|org|test|shop)\/)[^\s]*/i);
+  const promo=text.match(/(?:buy from|discount code|cheaper version|visit our|use code|use discount)[^.!?]*/i);
+  const seller=text.match(/(?:seller refused|customer service never replied|never replied to my order|seller service)[^.!?]*/i);
+  const shipping=text.match(/(?:arrived late|delivery was|shipping was|box was crushed|packaging was damaged)[^.!?]*/i);
+  const productOnly=text.match(/(?:stopped working|feels cheaper|fit is poor|fabric feels|quality was)[^.!?]*/i);
+
+  let hit=null,verdict='not_eligible',confidence=0,evidence='',rationale='',policyId='';
+  if(email||phone){hit=applicable.find(p=>p.id==='POL-PERSONAL');evidence=(email||phone)[0];rationale='Personal contact detail detected in review text.';confidence=94}
+  else if(url||promo){hit=applicable.find(p=>p.id==='POL-PROMO');evidence=(url||promo)[0];rationale='External purchase link, discount code, or redirection detected.';confidence=88}
+  else if(seller){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=seller[0];rationale='Content is explicitly about seller service, not the product.';confidence=82}
+  else if(shipping){hit=applicable.find(p=>p.id==='POL-SELLER');evidence=shipping[0];rationale='Fulfillment/shipping content detected — eligibility depends on current route.';confidence=64}
+
+  if(!hit){return {verdict:'not_eligible',policyId:'',confidence:productOnly?95:60,evidence:productOnly?productOnly[0]:firstSentence(r.text),rationale:productOnly?'Product-experience content only. No removable-policy signal present.':'No policy signal was matched to the applicable marketplace-scoped register.',blockedBy:''}}
+
+  policyId=hit.id;
+  const exclusionText=(hit.exclusions||'').toLowerCase();
+  const productMentioned=/(product|sheets?|pillowcase|comforter|fitted|fabric|color|colour|design)/i.test(text)&&hit.id==='POL-SELLER'&&/(product|sheets?|fabric|design|feels|quality)/i.test(text.slice(0,140));
+  if(productMentioned&&exclusionText.includes('mixed content')){verdict='hold';rationale+=' Mixed-content flag: product itself is mentioned — validator must confirm the primary subject.'}
+  else if(confidence>=80){verdict='clear_violation'}
+  else{verdict='hold';rationale+=' Confidence below threshold — human review required.'}
+  return {verdict,policyId,confidence,evidence,rationale,blockedBy:''};
+}
+
+function analyzeReview(r,actor='system'){
+  const screen=screenReview(r);
+  if(screen.blocked){
+    r.verdict='';r.block_reason=screen.reason;r.block_detail=screen.detail;r.classification=null;r.workflow_state='blocked';
+    logAudit('review',r.id,`Blocked: ${screen.reason}`,actor,'',screen.reason,screen.detail);
+    return r;
+  }
+  r.block_reason='';r.block_detail='';
+  const result=classifyReview(r);
+  const p=policyById(result.policyId);
+  r.classification={policyId:result.policyId,category:p?.heading||'No policy match',confidence:result.confidence,evidence:result.evidence,rationale:result.rationale,at:now()};
+  r.verdict=result.verdict;
+  r.workflow_state=result.verdict==='clear_violation'?'screened':result.verdict==='hold'?'screened':'routed';
+  r.validation={};r.approvals={ab:null,brandManager:null};
+  logAudit('review',r.id,`Analysis: verdict=${VERDICTS[result.verdict]} confidence=${result.confidence}%`,actor,'',result.verdict,p?.heading||'');
+  return r;
+}
+
+function firstSentence(s=''){return s.split(/[.!?]/)[0].trim().slice(0,220)||'No evidence quote available'}
+
+/* ── customer routing ──────────────────────────────────────────────── */
+function customerRoute(r){
+  if(!r.classification&&r.workflow_state!=='blocked')return {key:'screen',label:'Screen before routing',owner:'Review operations',detail:'Confirm the exact source review, then run screening.'};
+  if(r.workflow_state==='blocked')return {key:'blocked',label:`Blocked: ${BLOCK_REASONS[r.block_reason]||r.block_reason}`,owner:'Screening',detail:r.block_detail||'Address the block and re-run analysis.'};
+  if(r.verdict==='not_eligible')return {key:'product',label:'Product / listing improvement',owner:'Product quality',detail:'Customer feedback. Create an improvement task, not a removal case.'};
+  const p=policyById(r.classification?.policyId);
+  if(p?.id==='POL-SELLER')return {key:'operations',label:'Operations / customer experience follow-up',owner:'Operations or CX',detail:'Investigate the customer issue separately. A removal case is conditional on validator confirming primary subject.'};
+  if(r.verdict==='hold')return {key:'hold',label:'Policy owner review',owner:'Policy owner',detail:'HOLD until the current policy, exact quote, and reporting route are confirmed by a human.'};
+  return {key:'policy',label:'Human policy validation',owner:'Policy validator',detail:'CLEAR POLICY VIOLATION candidate. Verify the exact evidence before any case is created.'};
+}
+
+/* ── views ─────────────────────────────────────────────────────────── */
+const viewMeta={
+  dashboard:['Operations dashboard','Collect, screen, classify, route, validate, approve, draft, submit, monitor, close'],
+  reviews:['Review queue','Verdict, workflow state, block reason, and route per review'],
+  cases:['Case tracker','Draft (≤150 words), independent approvals, named submitter, weekly cap, observation, follow-up cap'],
+  policy:['Policy register','Marketplace-scoped, current entries with exclusions'],
+  protected:['Protected ASIN register','Launch-candidate, compliance-sensitive, catalog-sensitive, leadership-protected'],
+  audit:['Audit log','Append-only record of every state change'],
+  settings:['Settings','Cap, marketplaces, observation days, follow-ups, owners, notifications, version'],
+  automation:['Google Sheets & automation','Shared intake options and control boundaries'],
+  implementation:['Implementation','Working scope, production connections, controlled rollout']
+};
+function navigate(view){$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${view}`));$$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));$('#pageTitle').textContent=viewMeta[view][0];$('#pageSubtitle').textContent=viewMeta[view][1];$('#sidebar').classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});renderAll()}
+
+/* ── renders ───────────────────────────────────────────────────────── */
+function renderAll(){renderDashboard();renderReviews();renderCases();renderPolicies();renderProtected();renderAudit();renderSettings();$('#navReviewCount').textContent=state.reviews.length;$('#navCaseCount').textContent=state.cases.length;$('#navProtectedCount').textContent=state.protectedAsins.filter(x=>x.status==='active').length;$('#approveProposalBtn').textContent=state.settings.proposalApproved?'Phase 0 approved':'Approve Phase 0'}
+
+function renderPilotControls(){
+  const weekAgo=new Date();weekAgo.setDate(weekAgo.getDate()-7);
+  const submittedThisWeek=state.cases.filter(c=>c.submittedAt&&new Date(c.submittedAt)>=weekAgo).length;
+  const stale=state.policies.filter(p=>p.status==='active'&&!isPolicyFresh(p)).length;
+  const rows=[
+    ['Submission mode','Manual only'],
+    ['Weekly cap',`${submittedThisWeek} / ${state.settings.weeklyCap}`],
+    ['Required approvals','AB + Brand Manager (independent)'],
+    ['Observation window',`${state.settings.observationDays} days, internal`],
+    ['Follow-up cap',`${state.settings.followUpMax} per case`],
+    ['Policy staleness',`${state.settings.stalenessDays} days`],
+    ['Marketplaces',state.settings.marketplaces.join(', ')],
+    ['Protected ASINs',state.protectedAsins.filter(x=>x.status==='active').length],
+    ['Stale policies',stale?`${stale} need recheck`:'Current'],
+    ['Version',state.settings.scriptVersion]
+  ];
+  $('#pilotControls').innerHTML=rows.map(([k,v])=>`<div><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+}
+
+function renderDashboard(){
+  const counts={
+    collected:state.reviews.length,
+    blocked:state.reviews.filter(r=>r.workflow_state==='blocked').length,
+    candidates:state.reviews.filter(r=>['screened'].includes(r.workflow_state)&&['clear_violation','hold'].includes(r.verdict)).length,
+    validated:state.reviews.filter(r=>['validated','approved'].includes(r.workflow_state)).length,
+    ready:state.cases.filter(c=>c.status==='ready').length,
+    monitoring:state.cases.filter(c=>['submitted','monitoring'].includes(c.status)).length
+  };
+  $('#metricGrid').innerHTML=[
+    ['Reviews collected',counts.collected,'Current local dataset'],
+    ['Blocked at screening',counts.blocked,'Missing data · protected · prior filing · stale · exclusion'],
+    ['Need validation',counts.candidates,'CLEAR VIOLATION or HOLD verdicts'],
+    ['Validated / approved',counts.validated,'Human checks and approvals'],
+    ['Ready to submit',counts.ready,'Both approvals recorded'],
+    ['Monitoring',counts.monitoring,'Submitted cases']
+  ].map(x=>`<div class="metric"><span>${x[0]}</span><b>${x[1]}</b><small>${x[2]}</small></div>`).join('');
+
+  const steps=[['Collect','System + file','Approved source, CSV, or manual intake'],['Screen','Automated','Missing-data, protected-ASIN, prior-filing, stale-policy, exclusion gates'],['Classify','Assisted','Verdict: CLEAR VIOLATION / HOLD / NOT ELIGIBLE'],['Validate','Human','Confirm source, exact quote, current policy, primary-subject'],['Approve','Two people','AB and Brand Manager decisions (independent)'],['Draft','Automated','Editable case ≤150 words, evidence-quote locked'],['Submit','Manual','Named submitter uses current Amazon route'],['Monitor','Tracked','Internal observation window'],['Close','Audited','Record outcome, follow-up count, and learning']];
+  $('#workflow').innerHTML=steps.map((s,i)=>`<button data-workflow="${i}" data-message="${esc(s[2])}"><span class="step-num">${i+1}</span><strong>${s[0]}</strong><span>${s[1]}</span></button>`).join('');
+
+  const actions=[];
+  const newCount=state.reviews.filter(r=>r.workflow_state==='new').length;
+  const blockedCount=state.reviews.filter(r=>r.workflow_state==='blocked').length;
+  const validateCount=state.reviews.filter(r=>r.workflow_state==='screened'&&['clear_violation','hold'].includes(r.verdict)).length;
+  const approvalCount=state.reviews.filter(r=>r.workflow_state==='validated').length;
+  const dueCount=state.cases.filter(c=>['submitted','monitoring'].includes(c.status)&&c.nextReviewAt&&c.nextReviewAt<=today()).length;
+  if(newCount)actions.push([newCount,'Reviews need screening','Run analysis on new intake','reviews']);
+  if(blockedCount)actions.push([blockedCount,'Reviews blocked at screening','Review block reasons and correct data','reviews']);
+  if(validateCount)actions.push([validateCount,'Verdicts need human validation','Confirm evidence, policy, and primary subject','reviews']);
+  if(approvalCount)actions.push([approvalCount,'Validated records need approval','Record AB and Brand Manager decisions','reviews']);
+  if(dueCount)actions.push([dueCount,'Submitted cases need status checks','Update Amazon response and outcome','cases']);
+  $('#actionList').innerHTML=actions.length?actions.map(a=>`<div class="action-item"><div class="action-icon">${a[0]}</div><div><b>${a[1]}</b><span>${a[2]}</span></div><button class="text-btn" data-go="${a[3]}">Open</button></div>`).join(''):'<div class="empty-state"><strong>No pending actions</strong><span>The current queue is clear.</span></div>';
+
+  renderPilotControls();
+
+  const recent=[...state.cases].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(0,5);
+  $('#recentCases').innerHTML=recent.length?recent.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return `<tr><td><b>${esc(c.id)}</b></td><td>${esc(r?.asin)}<span class="cell-sub">${esc(r?.brand)} · ${esc(r?.marketplace)}</span></td><td>${esc(policyById(r?.classification?.policyId)?.heading||r?.classification?.category||'—')}</td><td><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></td><td>${esc(c.submitter||'Unassigned')}</td><td>${fmtDate(c.updatedAt)}</td></tr>`}).join(''):'<tr><td colspan="6"><div class="empty-state"><strong>No cases generated</strong><span>Approved reviews will appear here.</span></div></td></tr>';
+}
+
+function renderReviews(){
+  const search=($('#reviewSearch')?.value||'').toLowerCase();
+  const wf=$('#reviewStatusFilter')?.value||'all';
+  const vd=$('#reviewVerdictFilter')?.value||'all';
+  const brand=$('#reviewBrandFilter')?.value||'all';
+  const mp=$('#reviewMarketplaceFilter')?.value||'all';
+
+  const brands=brandsInUse();const cb=$('#reviewBrandFilter').value;$('#reviewBrandFilter').innerHTML='<option value="all">All brands</option>'+brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');if(brands.includes(cb))$('#reviewBrandFilter').value=cb;
+  const cmp=$('#reviewMarketplaceFilter').value;$('#reviewMarketplaceFilter').innerHTML='<option value="all">All marketplaces</option>'+state.settings.marketplaces.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');if(state.settings.marketplaces.includes(cmp))$('#reviewMarketplaceFilter').value=cmp;
+
+  const list=state.reviews.filter(r=>{
+    if(wf!=='all'&&r.workflow_state!==wf)return false;
+    if(vd!=='all'){if(vd==='unclassified'&&(r.verdict||r.workflow_state==='blocked'))return false;if(vd!=='unclassified'&&r.verdict!==vd)return false}
+    if(brand!=='all'&&r.brand!==brand)return false;
+    if(mp!=='all'&&r.marketplace!==mp)return false;
+    return [r.id,r.reviewId,r.asin,r.brand,r.title,r.text].join(' ').toLowerCase().includes(search);
+  }).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+
+  $('#reviewTableBody').innerHTML=list.map(r=>{
+    const verdictCell=r.workflow_state==='blocked'?`<span class="tag neutral" title="${esc(r.block_detail||'')}">BLOCKED · ${esc(r.block_reason||'')}</span>`:r.verdict?`<span class="tag ${VERDICT_CLASS[r.verdict]}">${VERDICTS[r.verdict]}</span>${r.classification?`<span class="cell-sub">${r.classification.confidence}% · ${esc(customerRoute(r).label)}</span>`:''}`:'<span class="tag neutral">Not analyzed</span>';
+    const wfCell=`<span class="tag ${WORKFLOW_CLASS[r.workflow_state]||'neutral'}">${WORKFLOW_STATES[r.workflow_state]||r.workflow_state}</span>`;
+    return `<tr><td><input class="review-check" data-id="${r.id}" type="checkbox" ${selectedReviews.has(r.id)?'checked':''} aria-label="Select ${esc(r.id)}"></td><td><div class="cell-title" title="${esc(r.text)}">${esc(r.title||r.text)}</div><span class="cell-sub">${esc(r.reviewId||r.id)} · ${fmtDate(r.reviewDate)}</span></td><td><b>${esc(r.asin)}</b><span class="cell-sub">${esc(r.brand)} · ${esc(r.marketplace)}</span></td><td><span class="rating">${esc(r.rating)} ★</span></td><td>${verdictCell}</td><td>${wfCell}</td><td>${fmtDate(r.updatedAt)}</td><td><div class="row-actions"><button class="btn small secondary open-review" data-id="${r.id}">Open</button></div></td></tr>`;
+  }).join('');
+  $('#reviewsEmpty').classList.toggle('hidden',list.length>0);
+  $('#selectAllReviews').checked=list.length>0&&list.every(r=>selectedReviews.has(r.id));
+}
+
+function renderCases(){
+  const search=($('#caseSearch')?.value||'').toLowerCase();const status=$('#caseStatusFilter')?.value||'all';
+  const list=state.cases.filter(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return(status==='all'||c.status===status)&&[c.id,c.amazonReference,c.route,c.submitter,r?.asin,r?.brand,c.draft].join(' ').toLowerCase().includes(search)}).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+  $('#caseTableBody').innerHTML=list.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);const ap=r?.approvals||{};const abOk=ap.ab?.decision==='approve';const bmOk=ap.brandManager?.decision==='approve';const okCount=(abOk?1:0)+(bmOk?1:0);return `<tr><td><b>${esc(c.id)}</b><span class="cell-sub">Created ${fmtDate(c.createdAt)}${c.followUpCount?` · ${c.followUpCount} follow-up`:''}</span></td><td><b>${esc(r?.asin)}</b><span class="cell-sub">${esc(r?.brand)} · ${esc(r?.marketplace)}</span></td><td>${esc(policyById(r?.classification?.policyId)?.heading||r?.classification?.category||'—')}</td><td>${okCount}/2 approved</td><td><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></td><td>${esc(c.submitter||'Unassigned')}</td><td>${esc(c.amazonReference||'Not issued')}</td><td>${esc(caseNextAction(c))}</td><td><button class="btn small secondary open-case" data-id="${c.id}">Open</button></td></tr>`}).join('');
+  $('#casesEmpty').classList.toggle('hidden',list.length>0);
+}
+function caseNextAction(c){if(c.status==='ready')return 'Manual submission';if(c.status==='submitted'||c.status==='monitoring')return c.nextReviewAt?`Check by ${fmtDate(c.nextReviewAt)}`:'Set check date';if(c.status==='closed')return 'Complete';return 'Finish draft'}
+
+function renderPolicies(){
+  $('#policyTableBody').innerHTML=state.policies.map(p=>`<tr><td><b>${esc(p.heading)}</b><span class="cell-sub">${esc(p.id)}</span></td><td>${(p.marketplaces||[]).map(m=>`<span class="pill">${esc(m)}</span>`).join(' ')||'<span class="pill warn">None</span>'}</td><td>${esc(p.guidance)}</td><td>${esc(p.exclusions||'—')}</td><td><a href="${esc(p.url)}" target="_blank" rel="noopener">Official source ↗</a></td><td>${fmtDate(p.lastChecked)}<span class="cell-sub">${isPolicyFresh(p)?`Within ${state.settings.stalenessDays}-day check`:'Recheck required'}</span></td><td>${esc(p.owner)}</td><td><span class="tag ${p.status==='active'?'success':'neutral'}">${p.status==='active'?'Active':'Inactive'}</span></td><td><button class="btn small secondary edit-policy" data-id="${p.id}">Edit</button></td></tr>`).join('');
+  const active=state.policies.filter(p=>p.status==='active').length;
+  const fresh=state.policies.filter(isPolicyFresh).length;
+  const stale=state.policies.filter(p=>p.status==='active'&&!isPolicyFresh(p)).length;
+  $('#policySummary').innerHTML=`<div class="health-item"><b>${state.policies.length}</b><span>Total controlled entries</span></div><div class="health-item"><b>${active}</b><span>Active entries</span></div><div class="health-item"><b>${fresh}</b><span>Within recheck window</span></div><div class="health-item"><b>${stale}</b><span>Need live recheck</span></div>`;
+}
+
+function renderProtected(){
+  $('#protectedTableBody').innerHTML=state.protectedAsins.map(x=>`<tr><td><b>${esc(x.asin)}</b></td><td>${esc(x.parent||'—')}</td><td>${esc(x.brand)}</td><td>${esc(x.marketplace)}</td><td>${esc(x.reason)}</td><td>${esc(x.owner)}</td><td>${fmtDate(x.protectedFrom)}</td><td>${x.releaseDate?fmtDate(x.releaseDate):'—'}</td><td><span class="tag ${x.status==='active'?'success':'neutral'}">${x.status}</span></td><td><button class="btn small secondary edit-protected" data-asin="${esc(x.asin)}" data-mp="${esc(x.marketplace)}">Edit</button> <button class="btn small danger remove-protected" data-asin="${esc(x.asin)}" data-mp="${esc(x.marketplace)}">Remove</button></td></tr>`).join('');
+  const active=state.protectedAsins.filter(x=>x.status==='active').length;
+  const byMp=state.settings.marketplaces.map(m=>`<div class="health-item"><b>${state.protectedAsins.filter(x=>x.status==='active'&&x.marketplace===m).length}</b><span>${m} protected</span></div>`).join('');
+  $('#protectedSummary').innerHTML=`<div class="health-item"><b>${active}</b><span>Total protected (active)</span></div>${byMp}`;
+}
+
+function renderAudit(){
+  const q=($('#auditSearch')?.value||'').toLowerCase();
+  const list=state.auditLog.filter(a=>!q||[a.entityId,a.entityType,a.event,a.actor,a.before,a.after,a.comment].join(' ').toLowerCase().includes(q));
+  $('#auditTableBody').innerHTML=list.slice(0,500).map(a=>`<tr><td><span class="cell-sub">${fmtDateTime(a.at)}</span></td><td><b>${esc(a.entityType)}</b><span class="cell-sub">${esc(a.entityId)}</span></td><td>${esc(a.event)}</td><td>${esc(a.actor)}</td><td>${a.before||a.after?`<span class="cell-sub">${esc(a.before||'—')} → ${esc(a.after||'—')}</span>`:'—'}</td><td>${esc(a.comment||'')}</td></tr>`).join('');
+  $('#auditEmpty').classList.toggle('hidden',list.length>0);
+}
+
+function renderSettings(){
+  const s=state.settings;
+  $('#settingsGrid').innerHTML=`
+    <div class="field"><label>Weekly submission cap</label><input id="setWeeklyCap" type="number" min="0" value="${s.weeklyCap}"></div>
+    <div class="field"><label>Observation window (days)</label><input id="setObservationDays" type="number" min="1" value="${s.observationDays}"></div>
+    <div class="field"><label>Follow-up cap (per case)</label><input id="setFollowUpMax" type="number" min="0" value="${s.followUpMax}"></div>
+    <div class="field"><label>Policy staleness (days)</label><input id="setStalenessDays" type="number" min="1" value="${s.stalenessDays}"></div>
+    <div class="field full"><label>Active marketplaces (comma-separated)</label><input id="setMarketplaces" value="${esc(s.marketplaces.join(','))}"></div>
+    <div class="field full"><label>Notification channel (Slack channel or email)</label><input id="setNotification" value="${esc(s.notificationChannel||'')}" placeholder="#review-ops or ops@company.com"></div>
+    <div class="field"><label>Script version</label><input id="setScriptVersion" value="${esc(s.scriptVersion||APP_VERSION)}" readonly></div>`;
+  $('#ownersTableBody').innerHTML=state.owners.map((o,i)=>`<tr><td>${esc(o.role)}</td><td><input data-owner-idx="${i}" data-field="name" value="${esc(o.name)}"></td><td><input data-owner-idx="${i}" data-field="brands" value="${esc((o.brands||[]).join(','))}"></td><td><input data-owner-idx="${i}" data-field="marketplaces" value="${esc((o.marketplaces||[]).join(','))}"></td><td><button class="btn small danger remove-owner" data-idx="${i}">Remove</button></td></tr>`).join('');
+  renderSheetSyncs();
+}
+
+/* ── modal ─────────────────────────────────────────────────────────── */
+function openModal(title,subtitle,body,footer=''){$('#modalTitle').textContent=title;$('#modalSubtitle').textContent=subtitle||'';$('#modalBody').innerHTML=body;$('#modalFooter').innerHTML=footer;$('#modalBackdrop').classList.add('open');$('#modalBackdrop').setAttribute('aria-hidden','false')}
+function closeModal(){$('#modalBackdrop').classList.remove('open');$('#modalBackdrop').setAttribute('aria-hidden','true')}
+function closeDrawer(){$('#drawerBackdrop').classList.remove('open');$('#drawerBackdrop').setAttribute('aria-hidden','true');$('#drawerFooter').innerHTML='';activeReviewId=null;activeCaseId=null}
+
+/* ── review form ───────────────────────────────────────────────────── */
+function openReviewForm(existing=null){
+  const r=existing||{};
+  const mpOpts=state.settings.marketplaces.map(m=>`<option ${r.marketplace===m?'selected':''}>${m}</option>`).join('');
+  openModal(existing?'Edit review':'Add review',existing?'Update the source record without changing its audit history.':'Enter the exact source data. Screening runs on save.',
+    `<form id="reviewForm" class="form-grid">
+      <div class="field"><label>Review ID</label><input name="reviewId" value="${esc(r.reviewId||'')}" placeholder="Amazon review ID"></div>
+      <div class="field"><label>Source reference</label><input name="sourceRef" value="${esc(r.sourceRef||'')}" placeholder="URL or source record"></div>
+      <div class="field"><label>ASIN *</label><input name="asin" required value="${esc(r.asin||'')}" list="asinList"></div>
+      <datalist id="asinList">${state.asinCatalog.map(a=>`<option value="${esc(a.child)}">${esc(a.brand)} · ${esc(a.productName)} · ${esc(a.marketplace)}</option>`).join('')}</datalist>
+      <div class="field"><label>Brand *</label><input name="brand" required value="${esc(r.brand||'')}" list="brandList"></div>
+      <datalist id="brandList">${brandsInUse().map(b=>`<option value="${esc(b)}">`).join('')}</datalist>
+      <div class="field"><label>Marketplace *</label><select name="marketplace">${mpOpts}</select></div>
+      <div class="field"><label>Rating *</label><select name="rating">${[1,2,3,4,5].map(x=>`<option ${Number(r.rating||1)===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Review date *</label><input name="reviewDate" type="date" required value="${esc(r.reviewDate||today())}"></div>
+      <div class="field"><label>Review title</label><input name="title" value="${esc(r.title||'')}"></div>
+      <div class="field full"><label>Exact review text *</label><textarea name="text" required>${esc(r.text||'')}</textarea><small>Do not summarize or rewrite the source text.</small></div>
+      <div class="field"><label><input type="checkbox" name="sourceRemoved" ${r.sourceRemoved?'checked':''}> Review already removed at source</label></div>
+    </form>`,
+    `<button class="btn secondary" id="cancelModal">Cancel</button><button class="btn primary" id="saveReview">${existing?'Save changes':'Add & screen'}</button>`);
+  $('#cancelModal').onclick=closeModal;
+  $('#saveReview').onclick=()=>{
+    const f=new FormData($('#reviewForm'));
+    const item=Object.fromEntries(f.entries());
+    item.rating=Number(item.rating);
+    item.sourceRemoved=f.get('sourceRemoved')==='on';
+    if(!item.asin.trim()||!item.brand.trim()||!item.text.trim()){toast('ASIN, brand, and exact review text are required');return}
+    const dup=duplicateOf(item,existing?.id);
+    if(dup){toast(`Duplicate found: ${dup.id}`);return}
+    if(existing){const before=JSON.stringify({asin:existing.asin,marketplace:existing.marketplace});Object.assign(existing,item);logAudit('review',existing.id,'Source edited','user',before,JSON.stringify({asin:existing.asin,marketplace:existing.marketplace}));analyzeReview(existing,'user')}
+    else{const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};state.reviews.unshift(review);logAudit('review',review.id,'Review added manually','user','','new');analyzeReview(review,'user')}
+    saveState();closeModal();toast(existing?'Review updated & re-screened':'Review added and screened');
+  };
+}
+
+/* ── review drawer ─────────────────────────────────────────────────── */
+function openReview(id){activeReviewId=id;const r=state.reviews.find(x=>x.id===id);if(!r)return;$('#drawerTitle').textContent=r.title||r.id;$('#drawerSubtitle').textContent=`${r.id} · ${r.asin} · ${r.brand} · ${r.marketplace}`;renderReviewDrawer(r);$('#drawerBackdrop').classList.add('open');$('#drawerBackdrop').setAttribute('aria-hidden','false')}
+
+function tag(cls,label){return `<span class="tag ${cls}">${esc(label)}</span>`}
+
+function renderReviewDrawer(r){
+  const p=policyById(r.classification?.policyId),c=caseForReview(r.id),route=customerRoute(r),v=r.validation||{},ap=r.approvals||{ab:null,brandManager:null};
+  const verdictBadge=r.workflow_state==='blocked'?tag('neutral',`BLOCKED · ${r.block_reason}`):r.verdict?tag(VERDICT_CLASS[r.verdict],VERDICTS[r.verdict]):tag('neutral','Not analyzed');
+  const wfBadge=tag(WORKFLOW_CLASS[r.workflow_state]||'neutral',WORKFLOW_STATES[r.workflow_state]||r.workflow_state);
+  $('#drawerBody').innerHTML=`
+    <section class="detail-section"><header><h3>Source review</h3>${wfBadge}</header><div class="detail-content"><div class="analysis-grid"><div class="analysis-box"><label>Review ID</label><b>${esc(r.reviewId||'Not provided')}</b></div><div class="analysis-box"><label>Review date</label><b>${fmtDate(r.reviewDate)}</b></div><div class="analysis-box"><label>Rating</label><b>${esc(r.rating)} ★</b></div><div class="analysis-box"><label>Source</label><b>${r.sourceRef?`<a href="${esc(r.sourceRef)}" target="_blank" rel="noopener">Open reference ↗</a>`:'Not provided'}</b></div></div><div class="quote" style="margin-top:10px">${esc(r.text)}</div></div></section>
+
+    ${r.workflow_state==='blocked'?`<section class="detail-section"><header><h3>Screening block</h3><span class="tag neutral">${esc(r.block_reason)}</span></header><div class="detail-content"><p class="modal-note"><b>${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}:</b> ${esc(r.block_detail||'')}</p><p class="modal-note">Correct the underlying data (edit the source record, update the Protected register, close the prior case, or refresh the policy's last-checked date) and re-run analysis.</p></div></section>`:''}
+
+    <section class="detail-section"><header><h3>Automated screening</h3>${verdictBadge}</header><div class="detail-content">${r.classification?`<div class="analysis-grid"><div class="analysis-box"><label>Verdict</label><b>${VERDICTS[r.verdict]||'—'}</b></div><div class="analysis-box"><label>Confidence</label><b>${r.classification.confidence}%</b></div><div class="analysis-box"><label>Policy entry</label><b>${esc(p?.heading||'No policy match')}</b></div><div class="analysis-box"><label>Policy freshness</label><b>${p?(isPolicyFresh(p)?'Current':'Recheck required'):'—'}</b></div></div><p class="modal-note">${esc(r.classification.rationale)}</p><div class="quote"><b>Exact evidence:</b> "${esc(r.classification.evidence)}"</div>`:'<p class="modal-note">Run analysis to classify this review.</p>'}</div></section>
+
+    <section class="detail-section"><header><h3>Customer outcome and routing</h3><span class="tag ${route.key==='policy'?'info':route.key==='product'?'success':route.key==='blocked'?'neutral':'warning'}">${esc(route.label)}</span></header><div class="detail-content"><p class="modal-note">${esc(route.detail)}</p></div></section>
+
+    <section class="detail-section"><header><h3>Human validation</h3><span class="tag ${v.at?'success':'warning'}">${v.at?'Completed':'Required'}</span></header><div class="detail-content"><div class="checklist"><label class="check-row"><input id="vSource" type="checkbox" ${v.sourceConfirmed?'checked':''}> Source record and ASIN are confirmed</label><label class="check-row"><input id="vQuote" type="checkbox" ${v.exactQuoteConfirmed?'checked':''}> Exact evidence quote is present in the review</label><label class="check-row"><input id="vPolicy" type="checkbox" ${v.policyCurrent?'checked':''}> Live policy and exact heading were checked</label><label class="check-row"><input id="vProduct" type="checkbox" ${v.productOnlyExcluded?'checked':''}> Case is not based only on a negative product experience</label><label class="check-row"><input id="vExclusion" type="checkbox" ${v.exclusionsChecked?'checked':''}> Policy exclusions were considered</label></div><div class="field" style="margin-top:10px"><label>Validation notes</label><textarea id="validationNotes">${esc(v.notes||'')}</textarea></div><div class="field" style="margin-top:8px"><label>Validator name</label><input id="validatorName" value="${esc(v.by||'AB')}"></div></div></section>
+
+    <section class="detail-section"><header><h3>Approvals (independent)</h3><span class="tag ${ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve'?'success':'warning'}">${[ap.ab?.decision==='approve',ap.brandManager?.decision==='approve'].filter(Boolean).length}/2 approved</span></header><div class="detail-content">
+      <div class="approver-block"><h4>AB decision</h4>${ap.ab?`<div class="analysis-box"><label>${ap.ab.decision==='approve'?'Approved':'Rejected'} by</label><b>${esc(ap.ab.by)} · ${fmtDateTime(ap.ab.at)}</b></div>${ap.ab.notes?`<p class="modal-note">${esc(ap.ab.notes)}</p>`:''}`:'<p class="modal-note">Pending.</p>'}
+        <div class="form-grid"><div class="field"><label>AB approver name</label><input id="abApproverName" value="${esc(ap.ab?.by||'AB')}"></div><div class="field full"><label>Decision notes</label><textarea id="abNotes">${esc(ap.ab?.notes||'')}</textarea></div></div>
+        <div class="drawer-actions"><button class="btn small success" id="approveAB">Approve as AB</button><button class="btn small danger" id="rejectAB">Reject as AB</button></div></div>
+      <div class="approver-block"><h4>Brand Manager decision</h4>${ap.brandManager?`<div class="analysis-box"><label>${ap.brandManager.decision==='approve'?'Approved':'Rejected'} by</label><b>${esc(ap.brandManager.by)} · ${fmtDateTime(ap.brandManager.at)}</b></div>${ap.brandManager.notes?`<p class="modal-note">${esc(ap.brandManager.notes)}</p>`:''}`:'<p class="modal-note">Pending.</p>'}
+        <div class="form-grid"><div class="field"><label>Brand Manager name</label><input id="bmApproverName" value="${esc(ap.brandManager?.by||suggestBM(r.brand))}"></div><div class="field full"><label>Decision notes</label><textarea id="bmNotes">${esc(ap.brandManager?.notes||'')}</textarea></div></div>
+        <div class="drawer-actions"><button class="btn small success" id="approveBM">Approve as Brand Manager</button><button class="btn small danger" id="rejectBM">Reject as Brand Manager</button></div></div>
+    </div></section>
+
+    ${c?`<section class="detail-section"><header><h3>Linked case</h3><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></header><div class="detail-content"><b>${esc(c.id)}</b><p class="modal-note">${esc(caseNextAction(c))}</p><button class="btn small primary" data-open-case="${esc(c.id)}">Open case</button></div></section>`:''}
+
+    <section class="detail-section"><header><h3>Audit history (this review)</h3></header><div class="detail-content"><ul class="audit-list">${state.auditLog.filter(a=>a.entityType==='review'&&a.entityId===r.id).slice(0,20).map(a=>`<li>${esc(a.event)}<time>${fmtDateTime(a.at)} · ${esc(a.actor)}</time></li>`).join('')||'<li>No entries yet.</li>'}</ul></div></section>
+
+    <section class="detail-section danger-zone"><header><h3>Record controls</h3></header><div class="detail-content"><button class="btn small secondary" id="reanalyzeBtn">Re-run screening</button> <button class="btn small secondary" id="editReviewDrawer">Edit source record</button> <button class="btn small danger" id="deleteReviewDrawer">Delete record</button></div></section>`;
+
+  renderReviewActions(r);
+  ['vSource','vQuote','vPolicy','vProduct','vExclusion','validatorName'].forEach(id=>{const el=$(`#${id}`);if(el)el.oninput=()=>renderReviewActions(r)});
+  $('#editReviewDrawer').onclick=()=>openReviewForm(r);
+  $('#deleteReviewDrawer').onclick=()=>confirmDeleteReview(r);
+  $('#reanalyzeBtn').onclick=()=>{analyzeReview(r,'user');saveState();openReview(r.id);toast('Re-screened')};
+  $$('.detail-content [data-open-case]').forEach(b=>b.onclick=()=>openCase(b.dataset.openCase));
+}
+
+function suggestBM(brand){const o=state.owners.find(x=>x.role==='Brand Manager'&&(x.brands||[]).some(b=>b===brand||b==='ALL'));return o?.name||''}
+
+function validationReady(){return ['vSource','vQuote','vPolicy','vProduct','vExclusion'].every(id=>$(`#${id}`)?.checked)&&Boolean($('#validatorName')?.value.trim())}
+
+function renderReviewActions(r){
+  const c=caseForReview(r.id);
+  const hasCandidate=Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict);
+  const ready=validationReady();
+  const ap=r.approvals||{ab:null,brandManager:null};
+  $('#drawerFooter').innerHTML=`<div class="next-step"><b>Next required step</b><span>${esc(reviewNextStep(r))}</span></div><div class="drawer-actions"><button class="btn secondary" id="analyzeOne">Re-run analysis</button><button class="btn secondary" id="saveValidation" ${!hasCandidate||!ready?'disabled':''}>Save validation</button><button class="btn primary" id="generateCase" ${!(ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve')?'disabled':''}>${c?'Open case':'Generate case'}</button></div>`;
+  $('#analyzeOne').onclick=()=>{analyzeReview(r,'user');saveState();openReview(r.id);toast('Analysis completed')};
+  $('#saveValidation').onclick=()=>saveValidation(r);
+  $('#approveAB').onclick=()=>recordApproval(r,'ab','approve');
+  $('#rejectAB').onclick=()=>recordApproval(r,'ab','reject');
+  $('#approveBM').onclick=()=>recordApproval(r,'brandManager','approve');
+  $('#rejectBM').onclick=()=>recordApproval(r,'brandManager','reject');
+  $('#generateCase').onclick=()=>c?openCase(c.id):generateCase(r);
+}
+
+function reviewNextStep(r){
+  if(r.workflow_state==='blocked')return `Screening block: ${BLOCK_REASONS[r.block_reason]||r.block_reason}. Correct the data and re-run analysis.`;
+  if(!r.classification)return 'Run screening to identify the correct customer route.';
+  if(r.verdict==='not_eligible')return 'Route as customer feedback. No removal case is created.';
+  if(!r.validation?.at)return 'Complete all five validation checks and name the validator.';
+  const ap=r.approvals||{};if(ap.ab?.decision!=='approve'||ap.brandManager?.decision!=='approve')return 'Record AB and Brand Manager approvals (both must be approve).';
+  if(!caseForReview(r.id))return 'Generate the editable case draft.';
+  return 'Open the linked case and complete the manual handoff when appropriate.';
+}
+
+function saveValidation(r){
+  if(!r.classification){toast('Run analysis before validation');return}
+  if(!['clear_violation','hold'].includes(r.verdict)){toast('Only CLEAR VIOLATION or HOLD verdicts can be validated.');return}
+  const by=$('#validatorName').value.trim();if(!by){toast('Validator name is required');return}
+  const before=r.workflow_state;
+  r.validation={sourceConfirmed:true,exactQuoteConfirmed:true,policyCurrent:true,productOnlyExcluded:true,exclusionsChecked:true,notes:$('#validationNotes').value.trim(),by,at:now()};
+  r.workflow_state='validated';r.updatedAt=now();
+  logAudit('review',r.id,`Validated by ${by}`,by,before,'validated',r.validation.notes);
+  saveState();openReview(r.id);toast('Validation saved');
+}
+
+function recordApproval(r,role,decision){
+  if(!r.validation?.at){toast('Complete human validation first');return}
+  const label=role==='ab'?'AB':'Brand Manager';
+  const nameInput=role==='ab'?$('#abApproverName'):$('#bmApproverName');
+  const notesInput=role==='ab'?$('#abNotes'):$('#bmNotes');
+  const name=nameInput?.value.trim();
+  if(!name){toast(`${label} approver name is required`);nameInput?.focus();return}
+  const before=r.approvals?.[role]?.decision||'pending';
+  r.approvals[role]={by:name,at:now(),decision,notes:notesInput?.value.trim()||''};
+  const ap=r.approvals;
+  if(ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve')r.workflow_state='approved';
+  else if(decision==='reject')r.workflow_state='validated';
+  r.updatedAt=now();
+  logAudit('review',r.id,`${label} ${decision} by ${name}`,name,before,decision,notesInput?.value.trim()||'');
+  saveState();openReview(r.id);toast(`${label} ${decision === 'approve' ? 'approval' : 'rejection'} recorded`);
+}
+
+function generateCase(r){
+  const ap=r.approvals||{};
+  if(!ap.ab||ap.ab.decision!=='approve'||!ap.brandManager||ap.brandManager.decision!=='approve'){toast('Both AB and Brand Manager must approve');return}
+  const p=policyById(r.classification?.policyId);
+  if(!p||!isPolicyFresh(p)){toast('The policy entry must be active and current');return}
+  let c=caseForReview(r.id);
+  if(!c){c={id:nextCaseId(),reviewId:r.id,status:'ready',draft:caseDraft(r,p),route:p.route,amazonReference:'',submittedAt:'',nextReviewAt:'',outcome:'',submitter:'',followUpCount:0,createdAt:now(),updatedAt:now()};state.cases.unshift(c);logAudit('case',c.id,'Case generated',ap.ab.by,'','ready',`Policy: ${p.heading}`);r.workflow_state='drafted';r.updatedAt=now();saveState()}
+  openCase(c.id);
+}
+
+function caseDraft(r,p){
+  const body=`ASIN: ${r.asin}
+Marketplace: ${r.marketplace}
+Review ID: ${r.reviewId||'Not provided'}
+
+Requested action
+Please review the identified customer review against the current ${p.heading} policy.
+
+Exact evidence
+"${r.classification.evidence}"
+
+Request
+Please make the final enforcement determination under the policy currently in effect. No outcome is assumed or guaranteed.`;
+  return body;
+}
+
+function confirmDeleteReview(r){openModal('Delete review record','This removes the review and any linked case from this browser.',`<p>Delete <b>${esc(r.id)}</b> for ASIN <b>${esc(r.asin)}</b>?</p>`,`<button class="btn secondary" id="cancelDelete">Cancel</button><button class="btn danger" id="confirmDelete">Delete</button>`);$('#cancelDelete').onclick=closeModal;$('#confirmDelete').onclick=()=>{state.cases=state.cases.filter(c=>c.reviewId!==r.id);state.reviews=state.reviews.filter(x=>x.id!==r.id);selectedReviews.delete(r.id);logAudit('review',r.id,'Deleted','user',r.workflow_state,'','');saveState();closeModal();closeDrawer();toast('Review and linked case deleted')}}
+
+/* ── case drawer ───────────────────────────────────────────────────── */
+function openCase(id){
+  closeDrawer();activeCaseId=id;
+  const c=state.cases.find(x=>x.id===id);if(!c)return;
+  const r=state.reviews.find(x=>x.id===c.reviewId),p=policyById(r?.classification?.policyId);
+  $('#drawerTitle').textContent=c.id;
+  $('#drawerSubtitle').textContent=`${r?.asin} · ${r?.brand} · ${r?.marketplace} · ${CASE_STATES[c.status]}`;
+  const wc=wordCount(c.draft);
+  const capExceeded=wc>150;
+  $('#drawerBody').innerHTML=`
+    <section class="detail-section"><header><h3>Case facts</h3><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></header><div class="detail-content"><div class="analysis-grid"><div class="analysis-box"><label>ASIN</label><b>${esc(r?.asin)}</b></div><div class="analysis-box"><label>Marketplace</label><b>${esc(r?.marketplace)}</b></div><div class="analysis-box"><label>Policy heading</label><b>${esc(p?.heading||r?.classification?.category)}</b></div><div class="analysis-box"><label>Evidence quote (locked)</label><b>"${esc(r?.classification?.evidence)}"</b></div><div class="analysis-box"><label>Verdict</label><b>${VERDICTS[r?.verdict]||'—'}</b></div><div class="analysis-box"><label>Follow-ups used</label><b>${c.followUpCount||0} / ${state.settings.followUpMax}</b></div></div></div></section>
+
+    <section class="detail-section"><header><h3>Editable case draft</h3><span class="tag ${capExceeded?'danger':wc>=140?'warning':'success'}">${wc} / 150 words</span></header><div class="detail-content"><textarea class="draft-area" id="caseDraftArea">${esc(c.draft)}</textarea><p class="modal-note">The evidence quote is locked — do not alter it. Any material change to the allegation should be rejected by validators.</p><button class="text-btn" id="copyCaseDraft">Copy draft</button></div></section>
+
+    <section class="detail-section"><header><h3>Submission and monitoring</h3></header><div class="detail-content"><div class="form-grid">
+      <div class="field full"><label>Current submission route</label><input id="caseRoute" value="${esc(c.route||'')}"></div>
+      <div class="field"><label>Named submitter *</label><input id="caseSubmitter" value="${esc(c.submitter||'')}" placeholder="Person who filed to Amazon"></div>
+      <div class="field"><label>Amazon reference ID, if issued</label><input id="amazonReference" value="${esc(c.amazonReference||'')}"></div>
+      <div class="field"><label>Submitted date</label><input id="submittedAt" type="date" value="${esc(c.submittedAt?.slice(0,10)||'')}"></div>
+      <div class="field"><label>Next internal check</label><input id="nextReviewAt" type="date" value="${esc(c.nextReviewAt||'')}"></div>
+      <div class="field full"><label>Outcome / closure notes</label><textarea id="caseOutcome">${esc(c.outcome||'')}</textarea></div>
+    </div></div></section>
+
+    <section class="detail-section"><header><h3>Audit history (this case)</h3></header><div class="detail-content"><ul class="audit-list">${state.auditLog.filter(a=>a.entityType==='case'&&a.entityId===c.id).slice(0,20).map(a=>`<li>${esc(a.event)}<time>${fmtDateTime(a.at)} · ${esc(a.actor)}</time></li>`).join('')||'<li>No entries yet.</li>'}</ul></div></section>`;
+
+  $('#drawerFooter').innerHTML=`<div class="drawer-actions"><button class="btn secondary" id="saveCase">Save draft</button><button class="btn primary" id="markSubmitted" ${c.status==='closed'?'disabled':''}>Mark submitted</button><button class="btn secondary" id="followUpBtn" ${!['submitted','monitoring'].includes(c.status)||(c.followUpCount||0)>=state.settings.followUpMax?'disabled':''}>Record follow-up (${c.followUpCount||0}/${state.settings.followUpMax})</button><button class="btn secondary" id="closeCaseBtn" ${!['submitted','monitoring'].includes(c.status)?'disabled':''}>Close case</button><button class="btn danger" id="deleteCaseBtn">Delete case</button></div>`;
+  $('#drawerBackdrop').classList.add('open');$('#drawerBackdrop').setAttribute('aria-hidden','false');
+
+  $('#caseDraftArea').oninput=()=>{const wc2=wordCount($('#caseDraftArea').value);$$('.detail-section header .tag')[1].className=`tag ${wc2>150?'danger':wc2>=140?'warning':'success'}`;$$('.detail-section header .tag')[1].textContent=`${wc2} / 150 words`};
+  $('#copyCaseDraft').onclick=()=>copyText($('#caseDraftArea').value);
+  $('#saveCase').onclick=()=>saveCaseFields(c,false);
+  $('#markSubmitted').onclick=()=>markSubmitted(c);
+  $('#followUpBtn').onclick=()=>recordFollowUp(c);
+  $('#closeCaseBtn').onclick=()=>closeCaseRecord(c);
+  $('#deleteCaseBtn').onclick=()=>deleteCase(c);
+}
+
+function saveCaseFields(c,quiet=false){
+  const draft=$('#caseDraftArea').value.trim();
+  const wc=wordCount(draft);
+  if(wc>150){toast(`Draft exceeds 150 words (${wc}). Trim before saving.`);return}
+  const r=state.reviews.find(x=>x.id===c.reviewId);
+  const evidence=r?.classification?.evidence||'';
+  if(evidence&&!draft.includes(evidence)){toast('Evidence quote is missing from the draft. Do not remove it.');return}
+  const before=`${c.status}·${c.submitter||''}`;
+  c.draft=draft;c.route=$('#caseRoute').value.trim();c.submitter=$('#caseSubmitter').value.trim();c.amazonReference=$('#amazonReference').value.trim();c.submittedAt=$('#submittedAt').value;c.nextReviewAt=$('#nextReviewAt').value;c.outcome=$('#caseOutcome').value.trim();c.updatedAt=now();
+  logAudit('case',c.id,'Case fields saved','user',before,`${c.status}·${c.submitter||''}`);
+  saveState();if(!quiet)toast('Case saved');
+}
+
+function markSubmitted(c){
+  const weekAgo=new Date();weekAgo.setDate(weekAgo.getDate()-7);
+  const weekly=state.cases.filter(x=>x.id!==c.id&&x.submittedAt&&new Date(x.submittedAt)>=weekAgo).length;
+  if(weekly>=state.settings.weeklyCap){toast(`Pilot cap reached: ${state.settings.weeklyCap} submissions in seven days`);return}
+  const submitter=$('#caseSubmitter').value.trim();
+  if(!submitter){toast('Named submitter is required before recording submission');$('#caseSubmitter').focus();return}
+  const route=$('#caseRoute').value.trim();
+  if(!route){toast('Confirm the current submission route before recording');return}
+  saveCaseFields(c,true);
+  if(!c.submittedAt||!c.submitter||!c.route){toast('Submission blocked — required fields missing');return}
+  c.submittedAt=c.submittedAt||today();c.nextReviewAt=c.nextReviewAt||addDays(c.submittedAt,state.settings.observationDays);c.status='submitted';c.updatedAt=now();
+  logAudit('case',c.id,`Manual submission recorded by ${submitter}`,submitter,'ready','submitted',c.amazonReference?`Amazon ref: ${c.amazonReference}`:'No reference issued');
+  saveState();openCase(c.id);toast('Manual submission recorded. Amazon was not contacted by this app.');
+}
+
+function recordFollowUp(c){
+  if((c.followUpCount||0)>=state.settings.followUpMax){toast('Follow-up cap reached for this case');return}
+  const submitter=$('#caseSubmitter').value.trim()||c.submitter;
+  if(!submitter){toast('Named submitter is required');return}
+  c.followUpCount=(c.followUpCount||0)+1;c.status='monitoring';c.nextReviewAt=addDays(today(),state.settings.observationDays);c.updatedAt=now();
+  logAudit('case',c.id,`Follow-up #${c.followUpCount} recorded`,submitter,String(c.followUpCount-1),String(c.followUpCount),`Same Amazon ref: ${c.amazonReference||'—'}`);
+  saveState();openCase(c.id);toast(`Follow-up ${c.followUpCount}/${state.settings.followUpMax} recorded`);
+}
+
+function closeCaseRecord(c){
+  const outcome=$('#caseOutcome').value.trim();
+  if(!outcome){toast('Add the final outcome before closing');return}
+  saveCaseFields(c,true);
+  const before=c.status;c.status='closed';c.closedAt=now();c.updatedAt=now();
+  logAudit('case',c.id,`Case closed`,c.submitter||'user',before,'closed',outcome);
+  saveState();openCase(c.id);toast('Case closed');
+}
+
+function deleteCase(c){openModal('Delete case','The source review and approvals will remain.',`<p>Delete case <b>${esc(c.id)}</b>?</p>`,`<button class="btn secondary" id="cancelCaseDelete">Cancel</button><button class="btn danger" id="confirmCaseDelete">Delete</button>`);$('#cancelCaseDelete').onclick=closeModal;$('#confirmCaseDelete').onclick=()=>{state.cases=state.cases.filter(x=>x.id!==c.id);logAudit('case',c.id,'Deleted','user',c.status,'','');saveState();closeModal();closeDrawer();toast('Case deleted')}}
+
+async function copyText(text){try{await navigator.clipboard.writeText(text);toast('Copied to clipboard')}catch(e){toast('Clipboard access was blocked')}}
+
+/* ── policy form ───────────────────────────────────────────────────── */
+function openPolicyForm(existing=null){
+  const p=existing||{};
+  const mpChecks=state.settings.marketplaces.map(m=>`<label class="check-row"><input type="checkbox" name="marketplaces" value="${m}" ${(p.marketplaces||[]).includes(m)?'checked':''}> ${m}</label>`).join('');
+  openModal(existing?'Edit policy entry':'Add policy entry','Use an Amazon-owned source and the exact current heading.',
+    `<form id="policyForm" class="form-grid">
+      <div class="field"><label>Policy ID *</label><input name="id" required ${existing?'readonly':''} value="${esc(p.id||'POL-')}"></div>
+      <div class="field"><label>Status</label><select name="status"><option value="active" ${p.status!=='inactive'?'selected':''}>Active</option><option value="inactive" ${p.status==='inactive'?'selected':''}>Inactive</option></select></div>
+      <div class="field full"><label>Exact policy heading *</label><input name="heading" required value="${esc(p.heading||'')}"></div>
+      <div class="field full"><label>Marketplaces this policy applies to *</label><div class="checklist">${mpChecks}</div></div>
+      <div class="field full"><label>Detection guidance *</label><textarea name="guidance" required>${esc(p.guidance||'')}</textarea></div>
+      <div class="field full"><label>Exclusions (what is NOT a case)</label><textarea name="exclusions" placeholder="Mixed content · product-primary · Amazon-owned URL · brand mention">${esc(p.exclusions||'')}</textarea></div>
+      <div class="field full"><label>Official Amazon source URL *</label><input name="url" type="url" required value="${esc(p.url||'')}"></div>
+      <div class="field"><label>Last checked date *</label><input name="lastChecked" type="date" required value="${esc(p.lastChecked||today())}"></div>
+      <div class="field"><label>Policy owner *</label><input name="owner" required value="${esc(p.owner||'AB')}"></div>
+      <div class="field full"><label>Current submission route instruction</label><input name="route" value="${esc(p.route||'Amazon Brand Registry > Report a Violation > Other Issues')}"></div>
+    </form>`,
+    `<button class="btn secondary" id="cancelPolicy">Cancel</button><button class="btn primary" id="savePolicy">Save policy</button>`);
+  $('#cancelPolicy').onclick=closeModal;
+  $('#savePolicy').onclick=()=>{
+    const form=$('#policyForm');const data=Object.fromEntries(new FormData(form).entries());
+    const mps=[...form.querySelectorAll('input[name="marketplaces"]:checked')].map(x=>x.value);
+    if(!data.id||!data.heading||!data.guidance||!data.url||!data.lastChecked||!data.owner){toast('Complete every required field');return}
+    if(!mps.length){toast('Select at least one marketplace');return}
+    if(!/^https:\/\/(www\.)?(amazon\.com|amazon\.ca|amazon\.com\.mx|amazon\.com\.br|sellercentral\.amazon\.com)\//i.test(data.url)){toast('Use an official Amazon or Seller Central URL');return}
+    data.marketplaces=mps;
+    if(existing){const before=JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces});Object.assign(existing,data);logAudit('policy',existing.id,'Policy updated','user',before,JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces}))}
+    else{if(state.policies.some(x=>x.id===data.id)){toast('Policy ID already exists');return}state.policies.push(data);logAudit('policy',data.id,'Policy added','user','',data.heading)}
+    saveState();closeModal();toast('Policy register updated');
+  };
+}
+
+/* ── protected ASIN form ───────────────────────────────────────────── */
+function openProtectedForm(existing=null){
+  const x=existing||{};
+  const mpOpts=state.settings.marketplaces.map(m=>`<option ${x.marketplace===m?'selected':''}>${m}</option>`).join('');
+  openModal(existing?'Edit protected ASIN':'Add protected ASIN','Screening blocks any review on these ASINs before classification.',
+    `<form id="protectedForm" class="form-grid">
+      <div class="field"><label>ASIN *</label><input name="asin" required value="${esc(x.asin||'')}" list="asinList2"></div>
+      <datalist id="asinList2">${state.asinCatalog.map(a=>`<option value="${esc(a.child)}">${esc(a.brand)} · ${esc(a.productName)}</option>`).join('')}</datalist>
+      <div class="field"><label>Parent ASIN</label><input name="parent" value="${esc(x.parent||'')}"></div>
+      <div class="field"><label>Brand *</label><input name="brand" required value="${esc(x.brand||'')}"></div>
+      <div class="field"><label>Marketplace *</label><select name="marketplace">${mpOpts}</select></div>
+      <div class="field full"><label>Reason *</label><input name="reason" required value="${esc(x.reason||'')}" placeholder="Launch-candidate / compliance-sensitive / catalog-sensitive / leadership-protected"></div>
+      <div class="field"><label>Owner *</label><input name="owner" required value="${esc(x.owner||'AB')}"></div>
+      <div class="field"><label>Protected from *</label><input name="protectedFrom" type="date" required value="${esc(x.protectedFrom||today())}"></div>
+      <div class="field"><label>Release date (optional)</label><input name="releaseDate" type="date" value="${esc(x.releaseDate||'')}"></div>
+      <div class="field"><label>Status</label><select name="status"><option value="active" ${x.status!=='inactive'?'selected':''}>Active</option><option value="inactive" ${x.status==='inactive'?'selected':''}>Inactive</option></select></div>
+      <div class="field"><label>Last checked *</label><input name="lastChecked" type="date" required value="${esc(x.lastChecked||today())}"></div>
+    </form>`,
+    `<button class="btn secondary" id="cancelProt">Cancel</button><button class="btn primary" id="saveProt">Save</button>`);
+  $('#cancelProt').onclick=closeModal;
+  $('#saveProt').onclick=()=>{
+    const data=Object.fromEntries(new FormData($('#protectedForm')).entries());
+    if(!data.asin||!data.brand||!data.marketplace||!data.reason||!data.owner){toast('Complete every required field');return}
+    if(existing){const before=JSON.stringify({status:existing.status,reason:existing.reason});Object.assign(existing,data);logAudit('protected',data.asin,'Updated','user',before,JSON.stringify({status:data.status,reason:data.reason}))}
+    else{if(state.protectedAsins.some(y=>y.asin===data.asin&&y.marketplace===data.marketplace)){toast('This ASIN + marketplace is already protected');return}state.protectedAsins.push(data);logAudit('protected',data.asin,`Added (${data.marketplace})`,'user','',data.reason)}
+    saveState();closeModal();toast('Protected ASIN register updated');
+  };
+}
+
+/* ── import / export ───────────────────────────────────────────────── */
+function openImport(){openModal('Import','CSV adds reviews or ASIN catalogue. JSON restores a complete backup.',`<div class="drop-zone"><b>Choose file</b><p>Reviews CSV columns: asin, brand, marketplace, rating, review_text, review_date (review_id, source_reference, review_title, source_removed optional).<br>ASIN catalogue CSV columns: brand, parent_asin, child_asin, sku, marketplace, product_name.</p><input id="importFile" type="file" accept=".csv,.json,text/csv,application/json"></div><div class="field"><label>Import as</label><select id="importMode"><option value="reviews">Reviews</option><option value="asins">ASIN catalogue (Master File)</option><option value="protected">Protected ASINs</option></select></div><div class="modal-note">Duplicates are skipped. Imported reviews enter New status and are auto-screened.</div>`,`<button class="btn secondary" id="cancelImport">Cancel</button><button class="btn primary" id="runImport">Validate and import</button>`);$('#cancelImport').onclick=closeModal;$('#runImport').onclick=handleImport}
+
+async function handleImport(){
+  const file=$('#importFile').files[0];if(!file){toast('Choose a file first');return}
+  const mode=$('#importMode').value;
+  const text=await file.text();
+  if(file.name.toLowerCase().endsWith('.json')){
+    try{const data=JSON.parse(text);if(data.version!==5||!Array.isArray(data.reviews)||!Array.isArray(data.policies)||!Array.isArray(data.cases))throw Error('bad backup');state=data;logAudit('system','backup','Backup restored','user','',file.name);saveState();closeModal();toast('Backup restored')}catch(e){toast('Not a valid v5 backup')}
+    return;
+  }
+  const rows=parseCSV(text);if(rows.length<2){toast('No data rows found');return}
+  const headers=rows[0].map(x=>x.trim().toLowerCase());
+  if(mode==='reviews'){
+    const required=['asin','brand','marketplace','rating','review_text','review_date'];const missing=required.filter(x=>!headers.includes(x));
+    if(missing.length){toast(`Missing columns: ${missing.join(', ')}`);return}
+    let added=0,duplicates=0,invalid=0;
+    for(const row of rows.slice(1)){const g=n=>row[headers.indexOf(n)]?.trim()||'';const item={reviewId:g('review_id'),sourceRef:g('source_reference'),asin:g('asin'),brand:g('brand'),marketplace:g('marketplace'),rating:Number(g('rating')),title:g('review_title'),text:g('review_text'),reviewDate:g('review_date'),sourceRemoved:['1','true','yes'].includes(g('source_removed').toLowerCase())};
+      if(!item.asin||!item.brand||!item.marketplace||!item.text||!item.reviewDate||item.rating<1||item.rating>5){invalid++;continue}
+      if(duplicateOf(item)){duplicates++;continue}
+      const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
+      state.reviews.push(review);logAudit('review',review.id,`Imported from ${file.name}`,'user','','new');analyzeReview(review,'system');added++;
+    }
+    saveState();closeModal();toast(`${added} added, ${duplicates} duplicates, ${invalid} invalid`);
+  } else if(mode==='asins'){
+    const required=['brand','parent_asin','child_asin','sku','marketplace','product_name'];const missing=required.filter(x=>!headers.includes(x));
+    if(missing.length){toast(`Missing columns: ${missing.join(', ')}`);return}
+    let added=0,skipped=0;
+    for(const row of rows.slice(1)){const g=n=>row[headers.indexOf(n)]?.trim()||'';const item={brand:g('brand'),parent:g('parent_asin'),child:g('child_asin'),sku:g('sku'),marketplace:g('marketplace'),productName:g('product_name')};
+      if(!item.brand||!item.child||!item.marketplace){skipped++;continue}
+      if(state.asinCatalog.some(x=>x.child===item.child&&x.marketplace===item.marketplace)){skipped++;continue}
+      state.asinCatalog.push(item);added++;
+    }
+    logAudit('system','asin_catalog',`Imported ${added} ASINs from ${file.name}`,'user','',String(added));
+    saveState();closeModal();toast(`${added} ASINs added, ${skipped} skipped`);
+  } else {
+    const required=['asin','brand','marketplace','reason','owner'];const missing=required.filter(x=>!headers.includes(x));
+    if(missing.length){toast(`Missing columns: ${missing.join(', ')}`);return}
+    let added=0,skipped=0;
+    for(const row of rows.slice(1)){const g=n=>row[headers.indexOf(n)]?.trim()||'';const item={asin:g('asin'),parent:g('parent_asin')||g('asin'),brand:g('brand'),marketplace:g('marketplace'),reason:g('reason'),owner:g('owner'),protectedFrom:g('protected_from')||today(),releaseDate:g('release_date')||'',status:'active',lastChecked:g('last_checked')||today()};
+      if(state.protectedAsins.some(x=>x.asin===item.asin&&x.marketplace===item.marketplace)){skipped++;continue}
+      state.protectedAsins.push(item);added++;
+    }
+    logAudit('system','protected',`Imported ${added} protected ASINs from ${file.name}`,'user','',String(added));
+    saveState();closeModal();toast(`${added} protected ASINs added, ${skipped} skipped`);
+  }
+}
+
+function parseCSV(text){const out=[];let row=[],cell='',quote=false;for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'&&quote&&n==='"'){cell+='"';i++}else if(c==='"')quote=!quote;else if(c===','&&!quote){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&n==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))out.push(row);row=[];cell=''}else cell+=c}row.push(cell);if(row.some(v=>v.trim()))out.push(row);return out}
+
+function openExport(){openModal('Export and templates','Download operational data, blank templates, or a complete backup.',`<div class="export-grid"><button class="export-option" data-export="review-template"><b>Review import template</b><span>Blank CSV with the required intake columns</span></button><button class="export-option" data-export="case-template"><b>Case tracker template</b><span>Blank CSV for case status and outcomes</span></button><button class="export-option" data-export="asin-template"><b>ASIN catalogue template</b><span>Master File columns (Brand · Parent · Child · SKU · MP · Product)</span></button><button class="export-option" data-export="protected-template"><b>Protected ASIN template</b><span>CSV for bulk protected-ASIN loading</span></button><button class="export-option" data-export="reviews"><b>Review data CSV</b><span>All collected and analyzed review records</span></button><button class="export-option" data-export="cases"><b>Case tracker CSV</b><span>Draft, approval, submission, and closure data</span></button><button class="export-option" data-export="audit"><b>Audit log CSV</b><span>Every recorded state change</span></button><button class="export-option" data-export="backup"><b>Complete JSON backup</b><span>Reviews, cases, policies, protected, audit, settings</span></button></div>`,`<button class="btn secondary" id="closeExport">Close</button>`);$('#closeExport').onclick=closeModal;$$('[data-export]').forEach(b=>b.onclick=()=>runExport(b.dataset.export))}
+
+function runExport(type){
+  if(type==='review-template')downloadCSV('review_import_template.csv',[['review_id','source_reference','asin','brand','marketplace','rating','review_title','review_text','review_date','source_removed'],['R123456789','https://www.amazon.com/gp/customer-reviews/R123456789','B0XXXXXXXX','Brand Name','US','1','Exact review title','Exact review text','2026-09-18','0']]);
+  if(type==='case-template')downloadCSV('case_tracker_template.csv',[['case_id','review_id','asin','brand','marketplace','policy_heading','evidence_quote','status','ab_approver','ab_decision','bm_approver','bm_decision','submitter','submission_route','submitted_at','amazon_reference','next_review_at','follow_up_count','outcome'],['CASE-YYYYMMDD-001','REV-1001','B0XXXXXXXX','Brand','US','Policy heading','Exact quote','draft','','','','','','','','','','0','']]);
+  if(type==='asin-template')downloadCSV('asin_catalog_template.csv',[['brand','parent_asin','child_asin','sku','marketplace','product_name'],['DECOLURE','B08KQKPKWC','B0BZPZ2L1R','BAMBOO-KING-BLACK','US','DECOLURE BAMBOO SHEET 4PCS']]);
+  if(type==='protected-template')downloadCSV('protected_asin_template.csv',[['asin','parent_asin','brand','marketplace','reason','owner','protected_from','release_date','last_checked'],['B0XXXXXXXX','B0XXXXXXXX','Brand','US','Launch-candidate','AB','2026-09-21','','2026-09-21']]);
+  if(type==='reviews')exportReviews();
+  if(type==='cases')exportCases();
+  if(type==='audit')exportAudit();
+  if(type==='backup')downloadBlob(`review_ops_backup_${today()}.json`,JSON.stringify(state,null,2),'application/json');
+}
+
+function exportReviews(){const rows=[['review_record_id','review_id','source_reference','asin','brand','marketplace','rating','review_title','review_text','review_date','workflow_state','verdict','block_reason','block_detail','policy_id','category','confidence','evidence_quote','rationale','validated_by','validated_at','ab_approver','ab_decision','ab_notes','bm_approver','bm_decision','bm_notes','updated_at'],...state.reviews.map(r=>[r.id,r.reviewId,r.sourceRef,r.asin,r.brand,r.marketplace,r.rating,r.title,r.text,r.reviewDate,r.workflow_state,r.verdict,r.block_reason,r.block_detail,r.classification?.policyId,r.classification?.category,r.classification?.confidence,r.classification?.evidence,r.classification?.rationale,r.validation?.by,r.validation?.at,r.approvals?.ab?.by,r.approvals?.ab?.decision,r.approvals?.ab?.notes,r.approvals?.brandManager?.by,r.approvals?.brandManager?.decision,r.approvals?.brandManager?.notes,r.updatedAt])];downloadCSV(`reviews_export_${today()}.csv`,rows)}
+
+function exportCases(){const rows=[['case_id','review_record_id','review_id','asin','brand','marketplace','policy_heading','evidence_quote','status','ab_approver','ab_decision','bm_approver','bm_decision','submitter','draft','submission_route','submitted_at','amazon_reference','next_review_at','follow_up_count','outcome','closed_at','updated_at'],...state.cases.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return[c.id,r?.id,r?.reviewId,r?.asin,r?.brand,r?.marketplace,policyById(r?.classification?.policyId)?.heading||r?.classification?.category,r?.classification?.evidence,c.status,r?.approvals?.ab?.by,r?.approvals?.ab?.decision,r?.approvals?.brandManager?.by,r?.approvals?.brandManager?.decision,c.submitter,c.draft,c.route,c.submittedAt,c.amazonReference,c.nextReviewAt,c.followUpCount||0,c.outcome,c.closedAt,c.updatedAt]})];downloadCSV(`cases_export_${today()}.csv`,rows)}
+
+function exportAudit(){const rows=[['audit_id','timestamp','entity_type','entity_id','event','actor','before','after','comment'],...state.auditLog.map(a=>[a.id,a.at,a.entityType,a.entityId,a.event,a.actor,a.before,a.after,a.comment])];downloadCSV(`audit_log_${today()}.csv`,rows)}
+
+function downloadCSV(name,rows){downloadBlob(name,rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8')}
+function downloadBlob(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},100);toast(`${name} downloaded`)}
+
+/* ── Google Sheets sync ────────────────────────────────────────────── */
+const SHEET_COLUMN_ALIASES={
+  brand:['brand','brand name','brandname','brand_name'],
+  parent:['parent asin','parent','parent_asin','parentasin','parent-asin'],
+  asin:['child asin','child','asin','child_asin','childasin','child-asin'],
+  sku:['sku','msku','fnsku','seller sku','merchant sku'],
+  marketplace:['marketplace','market','mp','country','store','region'],
+  productName:['product name','product','item name','name','product_name','productname','listing name'],
+  reviewer:['review by','reviewer','reviewer name','review_by','buyer','author','customer name'],
+  reviewDate:['review date','date','review_date','posted','posted on','date posted','submission date'],
+  title:['review title','title','review_title','headline'],
+  text:['review body','review text','body','text','review','content','review_body','comment','description'],
+  rating:['review star rating','rating','stars','star rating','review_star_rating','review stars','rating (stars)'],
+  productRating:['product star rating','products star rating','product\'s star rating','product\'s star rating (total reviews)','product rating','overall rating'],
+  reviewId:['review id','review_id','reviewid','id','amazon review id'],
+  sourceRef:['review url','review link','source','source_reference','url','link','review_url','amazon url']
+};
+const MARKETPLACE_ALIASES={US:['us','usa','united states','amazon.com','america'],CA:['ca','canada','can','amazon.ca'],MX:['mx','mexico','mex','amazon.com.mx','méxico'],BR:['br','brazil','bra','brasil','amazon.com.br']};
+
+function extractSheetId(input){if(!input)return '';const s=String(input).trim();const m=s.match(/\/d\/([a-zA-Z0-9_-]+)/);if(m)return m[1];if(/^[a-zA-Z0-9_-]{20,}$/.test(s))return s;return ''}
+function normalizeMarketplace(v){if(!v)return '';const lower=String(v).trim().toLowerCase();for(const [mp,al] of Object.entries(MARKETPLACE_ALIASES))if(al.includes(lower))return mp;return String(v).toUpperCase().trim()}
+function normalizeHeader(h){return String(h||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function parseSheetDate(v){
+  if(!v)return '';
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)){const [m,d,y]=s.split('/');return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+  if(/^\d{1,2}-[A-Za-z]{3}-\d{4}/.test(s)){const d=new Date(s);if(!isNaN(d))return d.toISOString().slice(0,10)}
+  const d=new Date(s);if(!isNaN(d))return d.toISOString().slice(0,10);
+  return '';
+}
+function autoMapColumns(headers){
+  const normalized=headers.map(normalizeHeader);const mapping={};
+  // Pass 1: exact match on any alias
+  for(const [field,aliases] of Object.entries(SHEET_COLUMN_ALIASES)){
+    for(const alias of aliases){const idx=normalized.indexOf(alias);if(idx>=0){mapping[field]=idx;break}}
+  }
+  // Pass 2: distinctive prefix match (aliases >= 6 chars only, to avoid false positives)
+  for(const [field,aliases] of Object.entries(SHEET_COLUMN_ALIASES)){
+    if(mapping[field]!==undefined)continue;
+    for(const alias of aliases){
+      if(alias.length<6)continue;
+      const escd=alias.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const re=new RegExp(`^${escd}(s?|[\\s(_-].*)$`);
+      const idx=normalized.findIndex(h=>re.test(h));
+      if(idx>=0){mapping[field]=idx;break}
+    }
+  }
+  return mapping;
+}
+function unmappedFields(mode,mapping){
+  const need=mode==='asins'?['brand','asin','marketplace']:mode==='reviews'?['asin','brand','marketplace','rating','text','reviewDate']:['brand','asin','marketplace','reason'];
+  return need.filter(f=>mapping[f]===undefined);
+}
+
+async function fetchSheetCsv(sheetId,tabName,range=''){
+  const urls=[];
+  // Apps Script /exec URL — accept in either sheetId or tabName field
+  const scriptRe=/^https:\/\/script\.google\.com\/.*\/exec/;
+  const scriptUrl=scriptRe.test(tabName)?tabName:scriptRe.test(sheetId)?sheetId:'';
+  if(scriptUrl){
+    // If script URL was in sheetId field, tabName is the actual sheet name to pass as ?sheet=
+    // If script URL was in tabName field, use range as the sheet name
+    const sheetParam=scriptRe.test(sheetId)?tabName:range;
+    if(/[?&]sheet=/.test(scriptUrl))urls.push(scriptUrl);
+    else if(sheetParam){const sep=scriptUrl.includes('?')?'&':'?';urls.push(`${scriptUrl}${sep}sheet=${encodeURIComponent(sheetParam)}`)}
+    else urls.push(scriptUrl);
+  }
+  else if(/\/pub\?/.test(tabName)||/^https?:\/\//.test(tabName)){urls.push(tabName)}
+  else {
+    const base=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+    urls.push(range?`${base}&range=${encodeURIComponent(range)}`:base);
+  }
+  let lastErr;
+  for(const url of urls){
+    try{
+      const res=await fetch(url,{redirect:'follow'});
+      if(res.status===403||res.status===401)throw new Error(`HTTP ${res.status} — Apps Script access is not set to "Anyone". Redeploy: Deploy → Manage deployments → pencil icon → "Who has access" = Anyone → Deploy. A new /exec URL will be issued — paste it here.`);
+      if(!res.ok)throw new Error(`HTTP ${res.status} ${res.statusText||''}`);
+      const text=await res.text();
+      if(text.includes('<!DOCTYPE')||text.includes('<html'))throw new Error('Received HTML instead of CSV. Sheet is not publicly viewable, or Apps Script requires sign-in. For Apps Script: set "Who has access" to Anyone. For direct sheet: share as "Anyone with the link — Viewer".');
+      if(text.startsWith('ERROR:'))throw new Error(text);
+      if(!text.trim())throw new Error('Empty response');
+      return text;
+    }catch(e){lastErr=e}
+  }
+  const msg=lastErr?.message||String(lastErr);
+  if(/failed to fetch|networkerror|load failed/i.test(msg)){
+    // Distinguish real CORS from wrong-URL-404 (both look identical to fetch())
+    // Try opaque no-cors fetch — succeeds with status 0 if server is reachable, throws if not
+    let hint='';
+    try{
+      const opaque=await fetch(urls[0],{mode:'no-cors',redirect:'follow'});
+      // If we get here, the URL is reachable — the failure is genuine CORS
+      hint=` The URL is reachable but returned no CORS headers to this origin. Deploy to your own host, or re-check the Apps Script deployment access setting.`;
+    }catch(e2){
+      hint=` The URL itself may be wrong (404) or unreachable — double-check the /exec URL character-by-character (Google's font confuses I ↔ l ↔ 1).`;
+    }
+    throw new Error(`Fetch blocked.${hint}`);
+  }
+  throw new Error(msg);
+}
+
+async function runSheetSync(config,silent=false){
+  const c=state.sheetSyncs.find(x=>x.id===config.id);if(!c)return;
+  if(!silent)toast(`Syncing ${c.name}…`);
+  try{
+    const csv=await fetchSheetCsv(c.sheetId,c.tabName,c.range);
+    const rows=parseCSV(csv);
+    if(rows.length<2)throw new Error('No data rows found');
+    const headers=rows[0];
+    const auto=autoMapColumns(headers);
+    const mapping={...auto,...(c.columnOverrides||{})};
+    const missing=unmappedFields(c.mode,mapping);
+    if(missing.length)throw new Error(`Missing required columns: ${missing.join(', ')}. Open Edit → Preview to map them manually.`);
+    let added=0,skipped=0,invalid=0,filtered=0;
+    const sinceDate=c.sinceDaysBack>0?addDays(today(),-c.sinceDaysBack):'';
+    const limit=c.rowLimit>0?c.rowLimit:Infinity;
+    for(const row of rows.slice(1)){
+      if(added>=limit)break;
+      const g=f=>mapping[f]!==undefined?String(row[mapping[f]]||'').trim():'';
+      if(c.mode==='asins'){
+        const item={brand:g('brand'),parent:g('parent')||g('asin'),child:g('asin')||g('parent'),sku:g('sku'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,productName:g('productName')};
+        if(!item.brand||!item.child||!item.marketplace){skipped++;continue}
+        if(state.asinCatalog.some(a=>a.child===item.child&&a.marketplace===item.marketplace)){skipped++;continue}
+        state.asinCatalog.push(item);added++;
+      }else if(c.mode==='reviews'){
+        const rawDate=g('reviewDate');
+        const parsedDate=parseSheetDate(rawDate);
+        if(sinceDate&&parsedDate&&parsedDate<sinceDate){filtered++;continue}
+        const item={reviewId:g('reviewId'),sourceRef:g('sourceRef'),asin:g('asin'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating:Number(g('rating'))||0,title:g('title'),text:g('text'),reviewDate:parsedDate||rawDate};
+        if(!item.asin||!item.brand||!item.marketplace||!item.text||!item.reviewDate||item.rating<1||item.rating>5){invalid++;continue}
+        if(duplicateOf(item)){skipped++;continue}
+        const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
+        state.reviews.push(review);
+        logAudit('review',review.id,`Sheet-sync from ${c.name}`,'sheet-sync','','new');
+        analyzeReview(review,'sheet-sync');
+        added++;
+      }
+    }
+    c.lastSyncedAt=now();c.lastAdded=added;c.lastSkipped=skipped;c.lastInvalid=invalid;c.lastFiltered=filtered;c.lastError='';
+    logAudit('sync',c.id,`Sheet-sync ran: +${added} · ${skipped} dup · ${invalid} invalid${filtered?` · ${filtered} outside date range`:''}`,'user','',String(added),`Tab: ${c.tabName}`);
+    saveState();
+    if(!silent)toast(`${c.name}: +${added} · ${skipped} dup · ${invalid} invalid${filtered?` · ${filtered} filtered`:''}`);
+    return {added,skipped,invalid,filtered};
+  }catch(e){
+    c.lastError=e.message;c.lastSyncedAt=now();
+    logAudit('sync',c.id,`Sheet-sync FAILED: ${e.message}`,'user','','error',`Tab: ${c.tabName}`);
+    saveState();
+    if(!silent)toast(`Sync failed: ${e.message}`);
+    return {error:e.message};
+  }
+}
+
+async function syncAllSheets(){
+  toast('Syncing all configs…');
+  let total={added:0,skipped:0,invalid:0,errors:0};
+  for(const c of state.sheetSyncs){
+    const r=await runSheetSync(c,true);
+    if(r?.error)total.errors++;
+    else{total.added+=r?.added||0;total.skipped+=r?.skipped||0;total.invalid+=r?.invalid||0}
+  }
+  toast(`All syncs done: +${total.added} · ${total.skipped} dup · ${total.invalid} invalid${total.errors?` · ${total.errors} failed`:''}`);
+}
+
+async function previewSheetSync(config){
+  toast('Fetching sheet preview…');
+  try{
+    const csv=await fetchSheetCsv(config.sheetId,config.tabName,config.range);
+    const rows=parseCSV(csv);
+    if(rows.length<2)throw new Error('No data rows found');
+    const headers=rows[0];const auto=autoMapColumns(headers);const mapping={...auto,...(config.columnOverrides||{})};
+    const sample=rows.slice(1,4);
+    const fieldsForMode=config.mode==='asins'?['brand','parent','asin','sku','marketplace','productName']:['reviewId','sourceRef','asin','brand','marketplace','rating','title','text','reviewDate','reviewer'];
+    const mapRows=fieldsForMode.map(f=>{
+      const opts=`<option value="">— unmapped —</option>`+headers.map((h,i)=>`<option value="${i}" ${mapping[f]===i?'selected':''}>${esc(h)}</option>`).join('');
+      const required=(config.mode==='asins'&&['brand','asin','marketplace'].includes(f))||(config.mode==='reviews'&&['asin','brand','marketplace','rating','text','reviewDate'].includes(f));
+      return `<tr><td><b>${f}</b>${required?' <span class="pill warn">required</span>':''}</td><td><select data-map-field="${f}">${opts}</select></td><td class="cell-sub">${mapping[f]!==undefined?esc(headers[mapping[f]]||''):'—'}</td></tr>`;
+    }).join('');
+    const sampleRows=sample.map(row=>`<tr>${fieldsForMode.map(f=>`<td class="cell-sub">${esc(mapping[f]!==undefined?row[mapping[f]]||'':'—')}</td>`).join('')}</tr>`).join('');
+    openModal(`Preview: ${config.name}`,`Auto-mapped ${Object.keys(auto).length} columns from ${headers.length} headers · ${rows.length-1} data rows`,
+      `<div class="table-wrap" style="max-height:200px;overflow:auto"><table><thead><tr><th>App field</th><th>Sheet column</th><th>Detected</th></tr></thead><tbody>${mapRows}</tbody></table></div>
+       <h4 style="margin-top:14px;font-size:.78rem">First 3 rows (mapped)</h4>
+       <div class="table-wrap"><table><thead><tr>${fieldsForMode.map(f=>`<th>${f}</th>`).join('')}</tr></thead><tbody>${sampleRows}</tbody></table></div>
+       <p class="modal-note">Override any auto-map above, then Save & Sync to import.</p>`,
+      `<button class="btn secondary" id="cancelPreview">Cancel</button><button class="btn primary" id="saveMapping">Save & Sync</button>`);
+    $('#cancelPreview').onclick=closeModal;
+    $('#saveMapping').onclick=async()=>{
+      const overrides={};
+      $$('[data-map-field]').forEach(sel=>{const v=sel.value;if(v!=='')overrides[sel.dataset.mapField]=Number(v)});
+      config.columnOverrides=overrides;saveState();closeModal();
+      await runSheetSync(config);
+    };
+  }catch(e){toast(`Preview failed: ${e.message}`)}
+}
+
+function openSyncConfigForm(existing=null){
+  const c=existing||{name:'',sheetId:'',tabName:'',mode:'reviews',defaultMarketplace:'',range:''};
+  const mpOpts=['',...state.settings.marketplaces].map(m=>`<option ${c.defaultMarketplace===m?'selected':''} value="${m}">${m||'(none — use sheet column)'}</option>`).join('');
+  openModal(existing?'Edit sync config':'Add sync config','Sheet must be shared as "Anyone with the link — Viewer" for direct sync. Otherwise paste a File → Publish to web CSV URL in the Tab field.',
+    `<form id="syncForm" class="form-grid">
+      <div class="field full"><label>Config name *</label><input name="name" required value="${esc(c.name)}" placeholder="Master File — US Reviews"></div>
+      <div class="field full"><label>Google Sheet URL or ID *</label><input name="sheetId" required value="${esc(c.sheetId)}" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
+      <div class="field"><label>Tab name * (or published-CSV URL)</label><input name="tabName" required value="${esc(c.tabName)}" placeholder="US"></div>
+      <div class="field"><label>Range (optional)</label><input name="range" value="${esc(c.range||'')}" placeholder="A1:L1000"></div>
+      <div class="field"><label>Import mode *</label><select name="mode"><option value="reviews" ${c.mode==='reviews'?'selected':''}>Reviews</option><option value="asins" ${c.mode==='asins'?'selected':''}>ASIN catalogue</option><option value="protected" ${c.mode==='protected'?'selected':''}>Protected ASINs</option></select></div>
+      <div class="field"><label>Default marketplace (if sheet lacks column)</label><select name="defaultMarketplace">${mpOpts}</select></div>
+      <div class="field"><label>Only reviews from last N days (0 = all)</label><input name="sinceDaysBack" type="number" min="0" value="${c.sinceDaysBack??7}"></div>
+      <div class="field"><label>Max rows per run (0 = no limit)</label><input name="rowLimit" type="number" min="0" value="${c.rowLimit??500}"></div>
+    </form>`,
+    `<button class="btn secondary" id="cancelSync">Cancel</button><button class="btn primary" id="saveSync">Save</button>`);
+  $('#cancelSync').onclick=closeModal;
+  $('#saveSync').onclick=()=>{
+    const data=Object.fromEntries(new FormData($('#syncForm')).entries());
+    data.sheetId=extractSheetId(data.sheetId)||data.sheetId;
+    data.sinceDaysBack=Math.max(0,Number(data.sinceDaysBack)||0);
+    data.rowLimit=Math.max(0,Number(data.rowLimit)||0);
+    if(!data.name||!data.sheetId||!data.tabName||!data.mode){toast('Complete every required field');return}
+    if(existing){Object.assign(existing,data);logAudit('sync',existing.id,'Sync config updated','user','',data.name)}
+    else{const nc={id:uid('SYNC'),columnOverrides:{},lastSyncedAt:'',lastAdded:0,lastSkipped:0,lastInvalid:0,lastError:'',...data};state.sheetSyncs.push(nc);logAudit('sync',nc.id,'Sync config added','user','',nc.name)}
+    saveState();closeModal();toast('Sync config saved');
+  };
+}
+
+function renderSheetSyncs(){
+  const rows=state.sheetSyncs.map(c=>{
+    const status=c.lastError?`<button class="tag danger sync-error" data-id="${esc(c.id)}" title="Click for details" style="border:0;cursor:pointer">Error</button>`:c.lastSyncedAt?`<span class="tag success">${fmtDateTime(c.lastSyncedAt)}</span>`:'<span class="tag neutral">Never</span>';
+    const stats=c.lastSyncedAt?`<span class="cell-sub">+${c.lastAdded||0} · ${c.lastSkipped||0} dup · ${c.lastInvalid||0} invalid${c.lastFiltered?` · ${c.lastFiltered} filtered`:''}</span>`:'';
+    return `<tr><td><b>${esc(c.name)}</b>${stats}</td><td>${esc(c.tabName)}${c.defaultMarketplace?` <span class="pill">${esc(c.defaultMarketplace)}</span>`:''}</td><td>${esc(c.mode)}</td><td>${status}</td><td><button class="btn small primary sync-now" data-id="${esc(c.id)}">Sync now</button> <button class="btn small secondary sync-preview" data-id="${esc(c.id)}">Preview</button> <button class="btn small secondary sync-edit" data-id="${esc(c.id)}">Edit</button> <button class="btn small danger sync-remove" data-id="${esc(c.id)}">Remove</button></td></tr>`;
+  }).join('');
+  const body=$('#sheetSyncsBody');if(body)body.innerHTML=rows||'<tr><td colspan="5" class="cell-sub" style="padding:14px">No sync configs yet. Add one to pull directly from Google Sheets.</td></tr>';
+}
+
+function showSyncError(configId){
+  const c=state.sheetSyncs.find(x=>x.id===configId);if(!c)return;
+  openModal(`Sync error: ${c.name}`,`Last attempt: ${fmtDateTime(c.lastSyncedAt)}`,
+    `<div class="quote" style="border-color:var(--red)"><b>Error message:</b><br>${esc(c.lastError||'Unknown error')}</div>
+     <h4 style="margin-top:14px;font-size:.78rem">Common causes</h4>
+     <ul style="font-size:.75rem;padding-left:20px;line-height:1.6">
+       <li><b>Sandboxed iframe (claude.ai preview):</b> Google refuses CORS to null origins. Deploy to your host (chatgpt.site works fine) or use the Apps Script proxy below.</li>
+       <li><b>Sheet not public:</b> File → Share → change to "Anyone with the link — Viewer".</li>
+       <li><b>Wrong tab name:</b> case-sensitive, must match exactly (e.g. "SKU LIST" not "sku list").</li>
+       <li><b>Missing required columns:</b> click Preview to see the auto-map result and override.</li>
+     </ul>
+     <p class="modal-note" style="margin-top:12px"><b>Fastest fix:</b> paste the Apps Script setup below into your sheet's Extensions → Apps Script, deploy as Web App, and paste the /exec URL into this config's Tab field.</p>`,
+    `<button class="btn secondary" id="closeErr">Close</button><button class="btn primary" id="showScriptFromErr">Show Apps Script setup</button>`);
+  $('#closeErr').onclick=closeModal;
+  $('#showScriptFromErr').onclick=()=>{closeModal();showAppsScriptSetup()};
+}
+
+function showAppsScriptSetup(){
+  const script=`// Amazon Review Removal Ops — Sheets sync proxy
+// Deploy: Deploy → New deployment → Web app
+//   Execute as: Me   |   Who has access: Anyone
+// Paste the resulting /exec URL into the app's sync config.
+// DO NOT click Run on doGet — it needs the HTTP event. Use testDoGet() instead.
+
+const SHEET_ID = '10ZF01GX9CSdUCoLuknafA9sZOR1pgyBzQSWAMrNtFI4'; // Master File
+
+function doGet(e){
+  const params = (e && e.parameter) || {};
+  const ss = params.id
+    ? SpreadsheetApp.openById(params.id)
+    : (SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID));
+  const name = params.sheet || ss.getSheets()[0].getName();
+  const sh = ss.getSheetByName(name);
+  if(!sh) return ContentService.createTextOutput('ERROR: tab not found: '+name).setMimeType(ContentService.MimeType.TEXT);
+  const values = sh.getDataRange().getValues();
+  const csv = values.map(row => row.map(cell => {
+    const s = cell instanceof Date
+      ? Utilities.formatDate(cell, Session.getScriptTimeZone(), 'yyyy-MM-dd')
+      : String(cell == null ? '' : cell);
+    return '"' + s.replace(/"/g,'""') + '"';
+  }).join(',')).join('\\n');
+  return ContentService.createTextOutput(csv).setMimeType(ContentService.MimeType.CSV);
+}
+
+// Safe to Run this from the editor — verifies the sheet is reachable.
+function testDoGet(){
+  const r = doGet({ parameter: { sheet: 'US' } });
+  Logger.log(r.getContent().substring(0, 800));
+}`;
+  openModal('Google Apps Script setup','Bypasses CORS. Works from any origin including sandboxed iframes.',
+    `<ol style="font-size:.78rem;line-height:1.7;padding-left:22px">
+       <li>Open <b>script.google.com</b> → New project (or use Extensions → Apps Script from the Master File — either works, the script hardcodes the sheet ID).</li>
+       <li>Delete existing code. Paste the script below. Save (💾).</li>
+       <li><b style="color:var(--blue)">Verify first:</b> in the function dropdown (top toolbar), select <b>testDoGet</b>, then click <b>Run</b>. Authorize on first run. Check Execution log — you should see CSV text. If you see "ERROR: tab not found", change the sheet name in testDoGet. If you see anything else, fix before deploying.</li>
+       <li>Click <b>Deploy → New deployment</b>.</li>
+       <li>Gear icon (top-right of dialog) → <b>Web app</b>.</li>
+       <li><b style="color:var(--red)">Critical settings:</b><br>
+         • Execute as: <b>Me (your email)</b><br>
+         • Who has access: <b>Anyone</b> ⚠ NOT "Anyone with Google account"</li>
+       <li>Click <b>Deploy</b>. Copy the <b>Web app URL</b> (ends in <code>/exec</code>).</li>
+       <li>Paste the /exec URL into the sync config's <b>Google Sheet URL</b> field. Keep the tab name (e.g. "US") in the <b>Tab</b> field. Save. Sync now.</li>
+     </ol>
+     <div class="quote" style="margin-top:12px;border-color:var(--red);background:var(--redbg)"><b>DO NOT click Run on doGet directly.</b> doGet needs the HTTP event object which only exists via the deployed URL. Manual runs throw "Cannot read properties of undefined (reading 'parameter')". Run <b>testDoGet</b> instead — it passes a fake event.</div>
+     <div class="quote" style="margin-top:12px;border-color:var(--amber);background:var(--amberbg)"><b>If you get HTTP 403 after deploy:</b> "Who has access" is wrong. Fix: Deploy → <b>Manage deployments</b> → pencil icon → Version = <b>New version</b> → Who has access = <b>Anyone</b> → Deploy. Google issues a NEW /exec URL — copy that. The old URL stays 403 forever.</div>
+     <div class="quote" style="margin-top:12px"><b>Script to paste:</b></div>
+     <textarea readonly class="draft-area" id="scriptCode" style="font-family:ui-monospace,monospace;font-size:.7rem;min-height:340px">${esc(script)}</textarea>`,
+    `<button class="btn secondary" id="closeScript">Close</button><button class="btn primary" id="copyScript">Copy script</button>`);
+  $('#closeScript').onclick=closeModal;
+  $('#copyScript').onclick=async()=>{try{await navigator.clipboard.writeText(script);toast('Script copied')}catch(e){$('#scriptCode').select();toast('Select all and copy manually')}};
+}
+
+
+function saveSettings(){
+  const before=JSON.stringify(state.settings);
+  const s=state.settings;
+  s.weeklyCap=Math.max(0,Number($('#setWeeklyCap').value)||0);
+  s.observationDays=Math.max(1,Number($('#setObservationDays').value)||1);
+  s.followUpMax=Math.max(0,Number($('#setFollowUpMax').value)||0);
+  s.stalenessDays=Math.max(1,Number($('#setStalenessDays').value)||1);
+  s.marketplaces=$('#setMarketplaces').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
+  s.notificationChannel=$('#setNotification').value.trim();
+  $$('#ownersTableBody input[data-owner-idx]').forEach(inp=>{const i=Number(inp.dataset.ownerIdx),f=inp.dataset.field;if(f==='name')state.owners[i].name=inp.value.trim();else state.owners[i][f]=inp.value.split(',').map(x=>x.trim()).filter(Boolean)});
+  logAudit('settings','global','Settings updated','user',before,JSON.stringify(state.settings));
+  saveState();toast('Settings saved');
+}
+
+function loadTestSet(){
+  if(!confirm('Load 10 test reviews? Existing reviews are kept; duplicates are skipped.'))return;
+  let added=0,skipped=0;
+  seedTestReviews.forEach(t=>{
+    if(duplicateOf(t)){skipped++;return}
+    const r={...t,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
+    state.reviews.unshift(r);
+    logAudit('review',r.id,'Test-set review loaded','user','','new');
+    analyzeReview(r,'system');
+    added++;
+  });
+  saveState();toast(`Test set loaded: ${added} added, ${skipped} skipped`);
+}
+
+/* ── event wiring ──────────────────────────────────────────────────── */
+$$('.nav-item').forEach(b=>b.onclick=()=>navigate(b.dataset.view));
+document.addEventListener('click',e=>{
+  const go=e.target.closest('[data-go]');if(go)navigate(go.dataset.go);
+  const review=e.target.closest('.open-review');if(review)openReview(review.dataset.id);
+  const c=e.target.closest('.open-case');if(c)openCase(c.dataset.id);
+  const p=e.target.closest('.edit-policy');if(p)openPolicyForm(state.policies.find(x=>x.id===p.dataset.id));
+  const ep=e.target.closest('.edit-protected');if(ep)openProtectedForm(state.protectedAsins.find(x=>x.asin===ep.dataset.asin&&x.marketplace===ep.dataset.mp));
+  const rp=e.target.closest('.remove-protected');if(rp){const asin=rp.dataset.asin,mp=rp.dataset.mp;if(confirm(`Remove ${asin} (${mp}) from Protected register?`)){state.protectedAsins=state.protectedAsins.filter(x=>!(x.asin===asin&&x.marketplace===mp));logAudit('protected',asin,`Removed (${mp})`,'user','active','removed','');saveState();toast('Removed')}}
+  const ro=e.target.closest('.remove-owner');if(ro){const i=Number(ro.dataset.idx);state.owners.splice(i,1);saveState();toast('Owner removed')}
+  const sn=e.target.closest('.sync-now');if(sn){const c=state.sheetSyncs.find(x=>x.id===sn.dataset.id);if(c)runSheetSync(c)}
+  const sp=e.target.closest('.sync-preview');if(sp){const c=state.sheetSyncs.find(x=>x.id===sp.dataset.id);if(c)previewSheetSync(c)}
+  const se=e.target.closest('.sync-edit');if(se){const c=state.sheetSyncs.find(x=>x.id===se.dataset.id);if(c)openSyncConfigForm(c)}
+  const sr=e.target.closest('.sync-remove');if(sr){const id=sr.dataset.id;if(confirm('Remove this sync config?')){state.sheetSyncs=state.sheetSyncs.filter(x=>x.id!==id);logAudit('sync',id,'Sync config removed','user','','');saveState();toast('Removed')}}
+  const serr=e.target.closest('.sync-error');if(serr)showSyncError(serr.dataset.id);
+  const wf=e.target.closest('[data-workflow]');if(wf){$$('[data-workflow]').forEach(x=>x.classList.remove('active'));wf.classList.add('active');$('#workflowMessage').textContent=wf.dataset.message}
+});
+$('#menuBtn').onclick=()=>$('#sidebar').classList.toggle('open');
+$('#newReviewBtn').onclick=()=>openReviewForm();
+$('#importBtn').onclick=openImport;
+$('#exportBtn').onclick=openExport;
+$('#loadTestSetBtn').onclick=loadTestSet;
+$('#modalClose').onclick=closeModal;
+$('#drawerClose').onclick=closeDrawer;
+$('#modalBackdrop').onclick=e=>{if(e.target===$('#modalBackdrop'))closeModal()};
+$('#drawerBackdrop').onclick=e=>{if(e.target===$('#drawerBackdrop'))closeDrawer()};
+$('#reviewSearch').oninput=renderReviews;
+$('#reviewStatusFilter').onchange=renderReviews;
+$('#reviewVerdictFilter').onchange=renderReviews;
+$('#reviewBrandFilter').onchange=renderReviews;
+$('#reviewMarketplaceFilter').onchange=renderReviews;
+$('#caseSearch').oninput=renderCases;
+$('#caseStatusFilter').onchange=renderCases;
+$('#auditSearch').oninput=renderAudit;
+$('#reviewTableBody').onchange=e=>{if(e.target.classList.contains('review-check')){e.target.checked?selectedReviews.add(e.target.dataset.id):selectedReviews.delete(e.target.dataset.id);renderReviews()}};
+$('#selectAllReviews').onchange=e=>{$$('.review-check').forEach(c=>{e.target.checked?selectedReviews.add(c.dataset.id):selectedReviews.delete(c.dataset.id)});renderReviews()};
+$('#bulkAnalyzeBtn').onclick=()=>{if(!selectedReviews.size){toast('Select at least one review');return}let n=0;selectedReviews.forEach(id=>{const r=state.reviews.find(x=>x.id===id);if(r){analyzeReview(r,'user');n++}});saveState();toast(`${n} reviews analyzed`)};
+$('#downloadReviewTemplate').onclick=()=>runExport('review-template');
+$('#downloadCaseTemplate').onclick=()=>runExport('case-template');
+$('#exportCasesBtn').onclick=exportCases;
+$('#exportAuditBtn').onclick=exportAudit;
+$('#addPolicyBtn').onclick=()=>openPolicyForm();
+$('#addProtectedBtn').onclick=()=>openProtectedForm();
+$('#importAsinsBtn').onclick=()=>{openImport();setTimeout(()=>{if($('#importMode'))$('#importMode').value='asins'},50)};
+$('#saveSettingsBtn').onclick=saveSettings;
+$('#addOwnerBtn').onclick=()=>{state.owners.push({role:'Brand Manager',name:'',brands:[],marketplaces:state.settings.marketplaces});saveState();toast('Owner row added — fill it in and Save')};
+$('#addSyncBtn').onclick=()=>openSyncConfigForm();
+$('#syncAllBtn').onclick=syncAllSheets;
+$('#appsScriptBtn').onclick=showAppsScriptSetup;
+$('#clearAllReviewsBtn').onclick=()=>{if(confirm('Delete ALL reviews and cases? Policies, protected ASINs, and audit log are kept.')){state.reviews=[];state.cases=[];selectedReviews.clear();logAudit('system','purge','Reviews and cases cleared','user','','');saveState();toast('Cleared')}};
+$('#factoryResetBtn').onclick=()=>{if(confirm('FACTORY RESET wipes everything in this browser. Continue?')){logAudit('system','reset','Factory reset','user','','');localStorage.removeItem(STORAGE_KEY);location.reload()}};
+$('#approveProposalBtn').onclick=()=>{state.settings.proposalApproved=true;logAudit('settings','proposal','Phase 0 approved','user','','approved');saveState();toast('Phase 0 approval recorded on this device')};
+['downloadGoogleTemplate','downloadGoogleTemplate2'].forEach(id=>{const el=$(`#${id}`);if(el)el.onclick=()=>runExport('review-template')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeDrawer()}});
+renderAll();
+</script>
+</body>
+</html>
