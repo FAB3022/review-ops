@@ -117,13 +117,13 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
           <div class="section-toolbar"><div><h2>Settings</h2><p>Central control for cap, marketplaces, observation days, follow-ups, owners, notifications, and version stamp. Every change lands in the audit log.</p></div><div class="toolbar-actions"><button class="btn primary" id="saveSettingsBtn">Save settings</button></div></div>
           <div class="card"><div class="settings-grid" id="settingsGrid"></div></div>
           <div class="card"><div class="card-head"><div><h2>Owners</h2><p>Named people accountable for each role. At least one AB and one Brand Manager per active brand.</p></div><button class="btn secondary" id="addOwnerBtn">+ Add owner</button></div><div class="table-wrap"><table><thead><tr><th>Role</th><th>Name</th><th>Brand scope</th><th>Marketplaces</th><th></th></tr></thead><tbody id="ownersTableBody"></tbody></table></div></div>
-          <div class="card"><div class="card-head"><div><h2>Google Sheets sync</h2><p>Pull directly from the Master File — auto-detects columns and imports reviews / ASIN catalogue / protected ASINs.</p></div><div class="toolbar-actions"><button class="btn secondary" id="appsScriptBtn">Apps Script setup</button><button class="btn secondary" id="addSyncBtn">+ Add config</button><button class="btn primary" id="syncAllBtn">Sync all</button></div></div><div class="table-wrap"><table><thead><tr><th>Config</th><th>Tab / MP</th><th>Mode</th><th>Last sync</th><th></th></tr></thead><tbody id="sheetSyncsBody"></tbody></table></div><div class="source-note" style="margin:12px 18px 16px"><b>Direct fetch works from your own host (e.g. chatgpt.site)</b> when the sheet is shared "Anyone with the link — Viewer". <b>Fails from sandboxed previews</b> (like the claude.ai artifact) because Google refuses CORS to null origins — for that case, use the <b>Apps Script setup</b> button to install a proxy in the sheet itself. Click any Error chip for full diagnostics.</div></div>
+          <div class="card"><div class="card-head"><div><h2>Google Sheets sync</h2><p>Pull directly from the Master File — auto-detects columns and imports reviews / ASIN catalogue / protected ASINs.</p></div><div class="toolbar-actions"><button class="btn secondary" id="appsScriptBtn">Apps Script setup</button><button class="btn secondary" id="addSyncBtn">+ Add config</button><button class="btn secondary" id="scanHistoryBtn" title="Checks every review in the Master File and keeps only CLEAR or HOLD candidates">Scan full history</button><button class="btn primary" id="syncAllBtn">Sync all</button></div></div><div class="table-wrap"><table><thead><tr><th>Config</th><th>Tab / MP</th><th>Mode</th><th>Last sync</th><th></th></tr></thead><tbody id="sheetSyncsBody"></tbody></table></div><div class="source-note" style="margin:12px 18px 16px"><b>Direct fetch works from your own host (e.g. chatgpt.site)</b> when the sheet is shared "Anyone with the link — Viewer". <b>Fails from sandboxed previews</b> (like the claude.ai artifact) because Google refuses CORS to null origins — for that case, use the <b>Apps Script setup</b> button to install a proxy in the sheet itself. Click any Error chip for full diagnostics.</div></div>
           <div class="card"><div class="card-head"><div><h2>Reset / restore</h2><p>Danger zone. Every action here is audited.</p></div></div><div class="settings-actions"><button class="btn secondary" id="clearAllReviewsBtn">Clear all reviews & cases</button><button class="btn danger" id="factoryResetBtn">Factory reset (wipe everything)</button></div></div>
         </section>
 
         <section class="view" id="view-implementation">
           <div class="implementation-grid">
-            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.6)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>All 14 Community Guidelines "What's not allowed" sections, quoted verbatim in every case</li><li>Safeguards: never report reviews mentioning our offers or contact outside Amazon</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, follow-up cap</li><li>Audit log with CSV export</li><li>Weekly approved-for-filing ASIN list</li><li>Priority score and priority-first queue</li><li>30-day success rate by policy and brand, auto-pause on stop conditions</li><li>Monday auto-sync from the Master File</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
+            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.6)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>All 14 Community Guidelines "What's not allowed" sections, quoted verbatim in every case</li><li>Safeguards: never report reviews mentioning our offers or contact outside Amazon</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, follow-up cap</li><li>Audit log with CSV export</li><li>Weekly approved-for-filing ASIN list</li><li>Priority score and priority-first queue</li><li>30-day success rate by policy and brand, auto-pause on stop conditions</li><li>Monday auto-sync from the Master File, plus a full-history scan that keeps only case candidates</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
             <div class="card"><div class="card-head"><div><h2>Production connections</h2><p>Required for a shared live system</p></div><span class="tag warning">Not connected</span></div><ol class="connection-list"><li><b>Approved review source</b><span>Connect Helium10 review-insights CSV export, Brand Registry email alerts (Gmail Apps Script parser), or scheduled file delivery.</span></li><li><b>Shared database</b><span>Replace browser storage with controlled, multi-user records and backups.</span></li><li><b>User identity</b><span>Map AB, brand managers, submitters, and audit permissions to real accounts.</span></li><li><b>Notification channel</b><span>Send approval and overdue-monitoring alerts to the approved workspace.</span></li><li><b>Seller Central handoff</b><span>Keep final submission manual until Amazon authorizes a supported integration.</span></li></ol></div>
           </div>
           <div class="card roadmap-card"><div class="card-head"><div><h2>Controlled rollout</h2><p>Progress only after the prior phase passes its acceptance check.</p></div></div><div class="roadmap"><article><small>Phase 0</small><h3>Validate</h3><p>Policy register, protected ASINs, schema, test set, roles, and no submissions.</p><b>Exit: agreed logic</b></article><article><small>Phase 1</small><h3>Pilot</h3><p>DECOLURE bamboo lines, US only. Two approvals, weekly cap and follow-up cap as set in Settings.</p><b>Exit: acceptable precision</b></article><article><small>Phase 2</small><h3>Expand</h3><p>Add brands gradually and measure outcomes and false positives.</p><b>Exit: stable controls</b></article><article><small>Phase 3</small><h3>Operate</h3><p>Formal SOP, training, access review, and policy-change audits.</p><b>Exit: operational ownership</b></article></div></div>
@@ -769,6 +769,7 @@ function openReview(id){activeReviewId=id;const r=state.reviews.find(x=>x.id===i
 function tag(cls,label){return `<span class="tag ${cls}">${esc(label)}</span>`}
 
 function renderReviewDrawer(r){
+  const canProceed=isCaseCandidate(r);
   const p=policyById(r.classification?.policyId),c=caseForReview(r.id),route=customerRoute(r),v=r.validation||{},ap=r.approvals||{ab:null,brandManager:null};
   const verdictBadge=r.workflow_state==='blocked'?tag('neutral',`BLOCKED · ${r.block_reason}`):r.verdict?tag(VERDICT_CLASS[r.verdict],VERDICTS[r.verdict]):tag('neutral','Not analyzed');
   const wfBadge=tag(WORKFLOW_CLASS[r.workflow_state]||'neutral',WORKFLOW_STATES[r.workflow_state]||r.workflow_state);
@@ -781,6 +782,7 @@ function renderReviewDrawer(r){
 
     <section class="detail-section"><header><h3>Customer outcome and routing</h3><span class="tag ${route.key==='policy'?'info':route.key==='product'?'success':route.key==='blocked'?'neutral':'warning'}">${esc(route.label)}</span></header><div class="detail-content"><p class="modal-note">${esc(route.detail)}</p></div></section>
 
+    ${canProceed?`
     <section class="detail-section"><header><h3>Human validation</h3><span class="tag ${v.at?'success':'warning'}">${v.at?'Completed':'Required'}</span></header><div class="detail-content"><div class="checklist"><label class="check-row"><input id="vSource" type="checkbox" ${v.sourceConfirmed?'checked':''}> Source record and ASIN are confirmed</label><label class="check-row"><input id="vQuote" type="checkbox" ${v.exactQuoteConfirmed?'checked':''}> Exact evidence quote is present in the review</label><label class="check-row"><input id="vPolicy" type="checkbox" ${v.policyCurrent?'checked':''}> Live policy and exact heading were checked</label><label class="check-row"><input id="vProduct" type="checkbox" ${v.productOnlyExcluded?'checked':''}> Case is not based only on a negative product experience</label><label class="check-row"><input id="vExclusion" type="checkbox" ${v.exclusionsChecked?'checked':''}> Policy exclusions were considered</label></div><div class="field" style="margin-top:10px"><label>Validation notes</label><textarea id="validationNotes">${esc(v.notes||'')}</textarea></div><div class="field" style="margin-top:8px"><label>Validator name</label><input id="validatorName" value="${esc(v.by||'AB')}"></div></div></section>
 
     <section class="detail-section"><header><h3>Approvals (independent)</h3><span class="tag ${ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve'?'success':'warning'}">${[ap.ab?.decision==='approve',ap.brandManager?.decision==='approve'].filter(Boolean).length}/2 approved</span></header><div class="detail-content">
@@ -791,6 +793,7 @@ function renderReviewDrawer(r){
         <div class="form-grid"><div class="field"><label>Brand Manager name</label><input id="bmApproverName" value="${esc(ap.brandManager?.by||suggestBM(r.brand))}"></div><div class="field full"><label>Decision notes</label><textarea id="bmNotes">${esc(bothDecided(ap)?ap.brandManager?.notes||'':'')}</textarea></div></div>
         <div class="drawer-actions"><button class="btn small success" id="approveBM">Approve as Brand Manager</button><button class="btn small danger" id="rejectBM">Reject as Brand Manager</button></div></div>
     </div></section>
+    `:ineligibleNote(r)}
 
     ${c?`<section class="detail-section"><header><h3>Linked case</h3><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></header><div class="detail-content"><b>${esc(c.id)}</b><p class="modal-note">${esc(caseNextAction(c))}</p><button class="btn small primary" data-open-case="${esc(c.id)}">Open case</button></div></section>`:''}
 
@@ -807,6 +810,11 @@ function renderReviewDrawer(r){
 }
 
 function bothDecided(ap){return Boolean(ap?.ab?.decision&&ap?.brandManager?.decision)}
+function isCaseCandidate(r){return r.workflow_state!=='blocked'&&Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict)}
+function ineligibleNote(r){
+  const why=r.workflow_state==='blocked'?`Blocked at screening: ${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}${r.block_detail?` — ${esc(r.block_detail)}`:''}.`:!r.classification?'Not analysed yet — select Re-run analysis.':esc(r.classification.rationale||'No Community Guidelines rule is broken.');
+  return `<section class="detail-section"><header><h3>Case eligibility</h3><span class="tag neutral">No removal case</span></header><div class="detail-content"><p class="modal-note"><b>This review cannot become a removal case.</b> ${why}</p><p class="modal-note">Amazon removes a review only when it breaks a Community Guidelines rule. Genuine product feedback (quality, fit, colour, durability) stays up — route it to the product team.</p><p class="modal-note">To find reviews that can proceed: on the Reviews page, filter the verdict to <b>CLEAR POLICY VIOLATION</b> or <b>HOLD</b>. To bring in older reviews, use <b>Scan full history</b> in Settings → Google Sheets sync.</p></div></section>`;
+}
 function suggestBM(brand){const o=state.owners.find(x=>x.role==='Brand Manager'&&(x.brands||[]).some(b=>b===brand||b==='ALL'));return o?.name||''}
 
 function validationReady(){return ['vSource','vQuote','vPolicy','vProduct','vExclusion'].every(id=>$(`#${id}`)?.checked)&&Boolean($('#validatorName')?.value.trim())}
@@ -816,14 +824,15 @@ function renderReviewActions(r){
   const hasCandidate=Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict);
   const ready=validationReady();
   const ap=r.approvals||{ab:null,brandManager:null};
-  $('#drawerFooter').innerHTML=`<div class="next-step"><b>Next required step</b><span>${esc(reviewNextStep(r))}</span></div><div class="drawer-actions"><button class="btn secondary" id="analyzeOne">Re-run analysis</button><button class="btn secondary" id="saveValidation" ${!hasCandidate||!ready?'disabled':''}>Save validation</button><button class="btn primary" id="generateCase" ${!(ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve')?'disabled':''}>${c?'Open case':'Generate case'}</button></div>`;
+  $('#drawerFooter').innerHTML=`<div class="next-step"><b>Next required step</b><span>${esc(reviewNextStep(r))}</span></div><div class="drawer-actions"><button class="btn secondary" id="analyzeOne">Re-run analysis</button>${isCaseCandidate(r)?`<button class="btn secondary" id="saveValidation" ${!hasCandidate||!ready?'disabled':''}>Save validation</button><button class="btn primary" id="generateCase" ${!(ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve')?'disabled':''}>${c?'Open case':'Generate case'}</button>`:''}</div>`;
   $('#analyzeOne').onclick=()=>{analyzeReview(r,'user');saveState();openReview(r.id);toast('Analysis completed')};
-  $('#saveValidation').onclick=()=>saveValidation(r);
-  $('#approveAB').onclick=()=>recordApproval(r,'ab','approve');
-  $('#rejectAB').onclick=()=>recordApproval(r,'ab','reject');
-  $('#approveBM').onclick=()=>recordApproval(r,'brandManager','approve');
-  $('#rejectBM').onclick=()=>recordApproval(r,'brandManager','reject');
-  $('#generateCase').onclick=()=>c?openCase(c.id):generateCase(r);
+  const on=(id,f)=>{const el=$('#'+id);if(el)el.onclick=f};
+  on('saveValidation',()=>saveValidation(r));
+  on('approveAB',()=>recordApproval(r,'ab','approve'));
+  on('rejectAB',()=>recordApproval(r,'ab','reject'));
+  on('approveBM',()=>recordApproval(r,'brandManager','approve'));
+  on('rejectBM',()=>recordApproval(r,'brandManager','reject'));
+  on('generateCase',()=>c?openCase(c.id):generateCase(r));
 }
 
 function reviewNextStep(r){
@@ -1296,6 +1305,35 @@ async function runSheetSync(config,silent=false){
   }
 }
 
+/* Reads every row of every review tab, analyses 1–3 star reviews in memory and keeps only CLEAR/HOLD candidates,
+   so the full history can be searched without exceeding browser storage. */
+async function scanFullHistory(silent=false){
+  if(!silent&&!confirm(`Scan every review in the Master File (all dates)? Only reviews that can become cases (CLEAR or HOLD) are kept. Marketplaces enabled in Settings: ${state.settings.marketplaces.join(', ')}.`))return null;
+  if(!silent)toast('Scanning full history…');
+  let scanned=0,kept=0,dup=0;const errors=[];
+  for(const c of state.sheetSyncs.filter(x=>x.mode==='reviews')){
+    try{
+      const rows=parseCSV(await fetchSheetCsv(c.sheetId,c.tabName,c.range));if(rows.length<2)continue;
+      const mapping={...autoMapColumns(rows[0]),...(c.columnOverrides||{})};
+      for(const row of rows.slice(1)){
+        const g=f=>mapping[f]!==undefined?String(row[mapping[f]]||'').trim():'';
+        if(!g('asin')&&!g('brand')&&!g('text'))continue;
+        const rating=Number(g('rating'))||0;if(rating>=4||rating<1)continue;
+        scanned++;
+        const item={reviewId:g('reviewId')||reviewIdFromLink(g('sourceRef')),sourceRef:g('sourceRef'),asin:g('asin'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating,title:g('title'),text:g('text'),reviewDate:parseSheetDate(g('reviewDate'))||g('reviewDate')};
+        if(duplicateOf(item)){dup++;continue}
+        const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
+        const logLen=state.auditLog.length;state.reviews.push(review);analyzeReview(review,'history-scan');
+        if(isCaseCandidate(review)){kept++;logAudit('review',review.id,`Kept by full-history scan (${c.name})`,'history-scan','','candidate')}
+        else{state.reviews.pop();state.auditLog.splice(0,state.auditLog.length-logLen)}
+      }
+    }catch(e){errors.push(`${c.name}: ${e.message}`)}
+  }
+  logAudit('sync','history',`Full-history scan: ${scanned} negative reviews checked, ${kept} candidates kept, ${dup} already present`,'user','',String(kept),errors.join('; '));
+  saveState();
+  if(!silent)toast(`Full history: ${kept} candidates added · ${scanned} negative reviews checked · ${dup} already here${errors.length?` · ${errors.length} tab errors`:''}`);
+  return {scanned,kept,dup,errors};
+}
 async function syncAllSheets(){
   toast('Syncing all configs…');
   let total={added:0,skipped:0,invalid:0,errors:0};
@@ -1527,6 +1565,7 @@ $('#saveSettingsBtn').onclick=saveSettings;
 $('#addOwnerBtn').onclick=()=>{state.owners.push({role:'Brand Manager',name:'',brands:[],marketplaces:state.settings.marketplaces});saveState();toast('Owner row added — fill it in and Save')};
 $('#addSyncBtn').onclick=()=>openSyncConfigForm();
 $('#syncAllBtn').onclick=syncAllSheets;
+$('#scanHistoryBtn').onclick=()=>scanFullHistory();
 $('#appsScriptBtn').onclick=showAppsScriptSetup;
 $('#clearAllReviewsBtn').onclick=()=>{if(confirm('Delete ALL reviews and cases? Policies, protected ASINs, and audit log are kept.')){state.reviews=[];state.cases=[];selectedReviews.clear();logAudit('system','purge','Reviews and cases cleared','user','','');saveState();toast('Cleared')}};
 $('#factoryResetBtn').onclick=()=>{if(confirm('FACTORY RESET wipes everything in this browser. Continue?')){logAudit('system','reset','Factory reset','user','','');localStorage.removeItem(STORAGE_KEY);location.reload()}};

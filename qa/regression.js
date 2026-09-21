@@ -197,5 +197,28 @@ ok(cal.localWalmart==='hold:POL-PRICING'&&cal.saleValue.startsWith('not_eligible
 ok(cal.functionRemark==='hold:POL-SELLER','missing parts plus a product remark → HOLD');
 ok(!/This policy applies to all products\."/.test(cal.medicalQuote)&&/"We don't allow any statements or claims related to preventing or curing serious medical conditions or severe symptoms\."/.test(cal.medicalQuote),'Medical claims quote is verbatim');
 ok(/characteristics like:" race, ethnicity/.test(cal.hateQuote),'Hate speech quote keeps Amazon wording inside quotes only');
+// Drawer clarity + full-history scan + end-to-end case from a scanned candidate
+const ux=await p.evaluate(async()=>{
+ state.reviews=[];state.cases=[];state.protectedAsins=state.protectedAsins.filter(x=>x.asin!=='B0TESTTEST');state.settings.marketplaces=['US','CA'];state.settings.submissionsPaused=false;state.settings.approvedAsins=[];state.policies.forEach(x=>x.lastChecked=today());
+ const ne={id:nextReviewId(),asin:'B0NE',brand:'DECOLURE',marketplace:'US',rating:2,title:'Bad quality',text:"Quality is poor and it didn't fit correctly.",reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};
+ state.reviews.push(ne);analyzeReview(ne);saveState();openReview(ne.id);
+ const neBody=$('#drawerBody').innerHTML,neFoot=$('#drawerFooter').innerHTML;closeDrawer();
+ const res=await scanFullHistory(true);
+ const kept=state.reviews.filter(r=>r.id!==ne.id);
+ const cand=kept.find(r=>r.verdict==='clear_violation');
+ openReview(cand.id);const cBody=$('#drawerBody').innerHTML;
+ ['vSource','vQuote','vPolicy','vProduct','vExclusion'].forEach(id=>$('#'+id).checked=true);$('#validatorName').value='AB';saveValidation(cand);
+ openReview(cand.id);$('#abApproverName').value='AB';recordApproval(cand,'ab','approve');
+ openReview(cand.id);$('#bmApproverName').value='Umer Shahid';recordApproval(cand,'brandManager','approve');
+ generateCase(cand);const cs=caseForReview(cand.id);
+ return {neHasPanel:/This review cannot become a removal case/.test(neBody),neNoChecklist:!/id="vSource"/.test(neBody),neFootOnlyRerun:!/generateCase|saveValidation/.test(neFoot),
+  res,keptAllCandidates:kept.every(isCaseCandidate),keptCount:kept.length,noAuditBloat:state.auditLog.length<500,
+  candHasChecklist:/id="vSource"/.test(cBody),caseStatus:cs?.status,draftBasis:/Guideline basis: Amazon's Community Guidelines/.test(cs?.draft||''),draftWords:wordCount(cs?.draft||'')}});
+console.log(JSON.stringify(ux));
+ok(ux.neHasPanel&&ux.neNoChecklist&&ux.neFootOnlyRerun,'NOT ELIGIBLE review: explains why, hides checklist/approvals, footer only offers Re-run');
+ok(ux.res&&ux.res.scanned>700&&ux.res.kept>=20&&ux.keptAllCandidates&&ux.keptCount===ux.res.kept,'full-history scan checks all negative reviews and keeps only candidates: '+JSON.stringify(ux.res));
+ok(ux.noAuditBloat,'scan does not flood the audit log with discarded reviews');
+ok(ux.candHasChecklist&&ux.caseStatus==='ready'&&ux.draftBasis&&ux.draftWords<=150,'scanned candidate → validation → AB + BM approval → case ready with guideline-based draft');
+
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
