@@ -196,6 +196,7 @@ const MARKETPLACES_ALL=['US','CA','MX','BR'];
 
 /* ── seeds ─────────────────────────────────────────────────────────── */
 const CG_URL='https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF';
+const SC_REVIEW_POLICY_URL='https://sellercentral.amazon.com/gp/help/external/GYRKB5RU3FS5TURN'; // Seller Central: Customer product reviews policies (primary reference)
 const ALL_MP=['US','CA','MX','BR'];
 /* One entry per Amazon Community Guidelines category. caseStatement is the plain-language basis used in case drafts. */
 const seedPolicies=[
@@ -207,7 +208,7 @@ const seedPolicies=[
   {id:'POL-SELLER',heading:'Seller and order feedback',guidance:'Product reviews must be about the product. Feedback about the seller, customer service, refunds, returns, shipping, delivery or packaging belongs in seller feedback.',caseStatement:"Amazon's Community Guidelines state that customer reviews should be about the product, and that feedback about the seller, order, shipping, packaging or returns belongs in Seller Feedback. The quoted text is feedback about the order rather than the product.",exclusions:'Mixed content where the product itself is also reviewed goes to HOLD for a person to judge.',keywords:[],exclusionKeywords:[]},
   {id:'POL-OFFTOPIC',heading:'Content not about the product',guidance:'Reviews must relate to the product. Content about Amazon’s own services, delivery carriers, a different product or unrelated experiences is not allowed.',caseStatement:"Amazon's Community Guidelines require customer reviews to be about the product itself. The quoted text concerns a delivery, platform or unrelated matter rather than this product.",exclusions:'Mixed content where the product itself is also reviewed goes to HOLD for a person to judge.',keywords:[],exclusionKeywords:[]},
   {id:'POL-REPETITIVE',heading:'Repetitive text and spam',guidance:'Reviews may not contain repetitive text, spam, symbols used as pictures, or the same content posted across several reviews.',caseStatement:"Amazon's Community Guidelines do not allow repetitive text, spam or duplicated content in customer reviews. The quoted text is of this kind.",exclusions:'Short genuine reviews are not spam.',keywords:[],exclusionKeywords:[]}
-].map(x=>({...x,url:CG_URL,marketplaces:ALL_MP,lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE}));
+].map(x=>({...x,url:SC_REVIEW_POLICY_URL,guidelineUrl:CG_URL,marketplaces:ALL_MP,lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE}));
 
 const seedProtected=[
   {asin:'B0FTSVDG77',parent:'B0FTSVDG77',brand:'SLEEPHORIA',marketplace:'US',reason:'Launch-candidate — cooling pillowcase line',owner:'AB',protectedFrom:today(),releaseDate:'',status:'active',lastChecked:today()},
@@ -297,6 +298,7 @@ function migrateState(s){
     p.route=APPROVED_ROUTE;
     const seed=seedPolicies.find(x=>x.id===p.id);
     if(seed&&OLD_SEED_HEADINGS.includes(p.heading)&&p.heading!==seed.heading||seed&&!p.caseStatement){Object.assign(p,{heading:seed.heading,guidance:seed.guidance,caseStatement:seed.caseStatement,exclusions:seed.exclusions,url:seed.url,keywords:[],marketplaces:[...new Set([...(p.marketplaces||[]),...seed.marketplaces])]})}
+    if(seed&&(!p.guidelineUrl||p.url===CG_URL||p.url==='https://sellercentral.amazon.com/gp/help/external/G201972140')){p.url=SC_REVIEW_POLICY_URL;p.guidelineUrl=CG_URL}
     if(!Array.isArray(p.exclusionKeywords))p.exclusionKeywords=seed?.exclusionKeywords||[];
     if(!Array.isArray(p.keywords))p.keywords=[];
   });
@@ -814,7 +816,8 @@ function caseDraft(r,p){
     '',
     `Community Guidelines category: ${p.heading}`,
     `Guideline basis: ${p.caseStatement||p.guidance}`,
-    ...(p.url?[`Reference: ${p.url}`]:[]),
+    ...(p.url?[`Seller Central policy: ${p.url}`]:[]),
+    ...(p.guidelineUrl?[`Community Guidelines: ${p.guidelineUrl}`]:[]),
     '',
     'Text in the review:',
     `"${r.classification.evidence}"`,
@@ -939,7 +942,8 @@ function openPolicyForm(existing=null){
       <div class="field full"><label>Case wording — guideline basis (used in every case draft for this policy)</label><textarea name="caseStatement" placeholder="Amazon's Community Guidelines do not allow … The quoted text …">${esc(p.caseStatement||'')}</textarea></div>
       <div class="field full"><label>Detection guidance *</label><textarea name="guidance" required>${esc(p.guidance||'')}</textarea></div>
       <div class="field full"><label>Exclusions (what is NOT a case)</label><textarea name="exclusions" placeholder="Mixed content · product-primary · Amazon-owned URL · brand mention">${esc(p.exclusions||'')}</textarea></div>
-      <div class="field full"><label>Official Amazon source URL *</label><input name="url" type="url" required value="${esc(p.url||'')}"></div>
+      <div class="field full"><label>Seller Central policy link * (primary reference in every case)</label><input name="url" type="url" required value="${esc(p.url||SC_REVIEW_POLICY_URL)}"></div>
+      <div class="field full"><label>Community Guidelines link</label><input name="guidelineUrl" type="url" value="${esc(p.guidelineUrl||CG_URL)}"></div>
       <div class="field"><label>Last checked date *</label><input name="lastChecked" type="date" required value="${esc(p.lastChecked||today())}"></div>
       <div class="field"><label>Policy owner *</label><input name="owner" required value="${esc(p.owner||'AB')}"></div>
       <div class="field full"><label>Exclusion keywords (comma-separated — a match blocks the review)</label><input name="exclusionKeywords" value="${esc((p.exclusionKeywords||[]).join(', '))}"></div>
@@ -953,6 +957,7 @@ function openPolicyForm(existing=null){
     if(!data.id||!data.heading||!data.guidance||!data.url||!data.lastChecked||!data.owner){toast('Complete every required field');return}
     if(!mps.length){toast('Select at least one marketplace');return}
     if(!/^https:\/\/(www\.)?(amazon\.com|amazon\.ca|amazon\.com\.mx|amazon\.com\.br|sellercentral\.amazon\.com)\//i.test(data.url)){toast('Use an official Amazon or Seller Central URL');return}
+    if(data.guidelineUrl&&!/^https:\/\/(www\.)?(amazon\.com|amazon\.ca|amazon\.com\.mx|amazon\.com\.br|sellercentral\.amazon\.com)\//i.test(data.guidelineUrl)){toast('Community Guidelines link must be an official Amazon URL');return}
     data.marketplaces=mps;data.route=APPROVED_ROUTE;data.keywords=String(data.keywords||'').split(',').map(x=>x.trim()).filter(Boolean);data.exclusionKeywords=String(data.exclusionKeywords||'').split(',').map(x=>x.trim()).filter(Boolean);
     if(existing){const before=JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces});Object.assign(existing,data);logAudit('policy',existing.id,'Policy updated','user',before,JSON.stringify({heading:existing.heading,marketplaces:existing.marketplaces}))}
     else{if(state.policies.some(x=>x.id===data.id)){toast('Policy ID already exists');return}state.policies.push(data);logAudit('policy',data.id,'Policy added','user','',data.heading)}

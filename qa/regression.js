@@ -143,7 +143,7 @@ ok(cg.otherBrand==='hold:POL-PROMO','other brand recommendation with product tal
 ok(cg.offtopic==='clear_violation:POL-OFFTOPIC','Amazon service complaint → CLEAR');
 ok(cg.repetitiveSym==='clear_violation:POL-REPETITIVE'&&cg.shortOk.startsWith('not_eligible'),'symbol spam flagged, short genuine review not');
 ok(cg.orderOnly==='clear_violation:POL-SELLER'&&cg.orderMixed==='hold:POL-SELLER'&&cg.missing==='hold:POL-SELLER','order-only CLEAR, mixed and missing-pieces HOLD');
-ok(/Community Guidelines category: Seller and order feedback/.test(cg.draft)&&/Guideline basis: Amazon's Community Guidelines state/.test(cg.draft)&&cg.draftWords<=150,'draft uses guideline category and basis, ≤150 words');
+ok(/Community Guidelines category: Seller and order feedback/.test(cg.draft)&&/Guideline basis: Amazon's Community Guidelines state/.test(cg.draft)&&/Seller Central policy: https:\/\/sellercentral\.amazon\.com\/gp\/help\/external\/GYRKB5RU3FS5TURN/.test(cg.draft)&&/Community Guidelines: https:\/\/www\.amazon\.com/.test(cg.draft)&&cg.draftWords<=150,'draft: guideline category and basis, Seller Central link first, Community Guidelines link, ≤150 words');
 
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();

@@ -95,8 +95,9 @@ Built only from stored facts. 150 words maximum (save refused above that). The e
 ```
 ASIN / Marketplace / Review ID / Review link
 Community Guidelines category: <heading>
-Guideline basis: <policy.caseStatement>
-Reference: <policy.url>
+Guideline basis: <policy.caseStatement>   (Community Guidelines wording is the core of every case)
+Seller Central policy: <policy.url>          (primary reference: Customer product reviews policies, GYRKB5RU3FS5TURN)
+Community Guidelines: <policy.guidelineUrl>
 Text in the review: "<evidence>"
 We request that Amazon review this content against the <heading> section of the
 Community Guidelines and remove it if it does not comply. We are not disputing the
@@ -126,7 +127,7 @@ The route is a constant: `Amazon Brand Registry > Report a Violation > Other Iss
 |---|---|
 | `reviews` | id, reviewId (Amazon), sourceRef, asin, brand, marketplace, rating, title, text, reviewDate, reviewer, collectedAt, sourceRemoved, workflow_state (`new/screened/blocked/routed/validated/approved/drafted`), verdict, block_reason, block_detail, classification{policyId, category, confidence, evidence, rationale, at}, validation{5 checks, notes, by, at}, approvals{ab, brandManager: {by, at, decision, notes}}, updatedAt |
 | `cases` | id, reviewId (FK), status (`ready/submitted/monitoring/closed`), draft, route, submitter, amazonReference, submittedAt, **recordedAt**, nextReviewAt, followUpCount, amazonResponse, outcome, closedAt, createdAt, updatedAt |
-| `policies` | id, heading, marketplaces[], guidance, **caseStatement**, **keywords[]**, exclusions, **exclusionKeywords[]**, url (Amazon or Seller Central only), lastChecked, owner, status, route (constant) |
+| `policies` | id, heading, marketplaces[], guidance, **caseStatement**, url (Seller Central policy link, primary), **guidelineUrl** (Community Guidelines), **keywords[]**, exclusions, **exclusionKeywords[]**, lastChecked, owner, status, route (constant) |
 | `protected_asins` | asin, parent, brand, marketplace (`US/CA/MX/BR/ALL`), reason, owner, protectedFrom, releaseDate, status, lastChecked |
 | `asin_catalog` | brand, parent, child, sku, marketplace, productName. Source: Master File SKU LIST (brand taken from the product-name prefix) |
 | `owners` | role (AB / Brand Manager / Submitter), name, brands[], marketplaces[] → map to user accounts |
