@@ -8,7 +8,7 @@
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 70 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 74 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -162,6 +162,8 @@ Seed data (8 Community Guidelines policies with `caseStatement` wording, 3 SLEEP
 
 Read it with a service account, not the public link.
 
+**Full-history scan (reference app):** `scanFullHistory()` reads every row of every review tab, analyses 1–3★ reviews in memory and keeps only CLEAR/HOLD candidates, because browser storage can't hold the ~5,000-review history. Once the Command Center has a database, store every review and run the classifier over all of them. Keep the rule that non-candidates never show validation or approval controls.
+
 ---
 
 ## 5. Notifications (channel to be confirmed)
@@ -170,7 +172,7 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (70) to the Command Center test suite.
+1. Port `qa/regression.js` scenarios (74) to the Command Center test suite.
 2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 12 CLEAR (all seller, order or shipping feedback), 21 HOLD (19 seller/order, 1 review before delivery, 1 pricing), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
