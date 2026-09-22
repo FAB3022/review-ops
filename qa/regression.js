@@ -287,5 +287,11 @@ ok(sop.canadaFamily==='CANADA_REVIEWS'&&sop.afterRemoval==='clear_violation','Ca
 ok(sop.first==='submitted'&&sop.second==='ready','SOP spacing: a second filing on the same ASIN inside 48 hours is blocked');
 ok(sop.tier2==='ready','SOP Phase 1: Tier 2 cases are not filed');
 ok(sop.card&&sop.controlRate&&sop.tierRate,'Learning and trends card: control-set removal rate and Tier 1 rate vs SOP 4–8%');
+// MajestIQ conditions from SOP 4.3 not previously detected: steering to a competing brand, threats
+const mq=await p.evaluate(()=>{const run=(text)=>{const c=classifyReview({id:'M'+text.length,asin:'B0MQ',rating:1,title:'',text,marketplace:'US'});return c.verdict+':'+(c.policyId||'-')};
+ return {steer:run('Buy the Utopia brand instead.'),comparison:run('Other brands are much better.'),threat:run('You will regret this, I will find you.'),sue:run('I will sue.')}});
+console.log(JSON.stringify(mq));
+ok(mq.steer==='hold:POL-PROMO'&&mq.comparison.startsWith('not_eligible'),'explicit steering to a competing brand → Tier 2; plain comparison → Tier 3');
+ok(mq.threat==='hold:POL-PROFANITY'&&mq.sue.startsWith('not_eligible'),'threat → Tier 2 (Harassment or threats); "I will sue" is not a threat');
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();

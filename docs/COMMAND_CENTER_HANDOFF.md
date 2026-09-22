@@ -9,7 +9,7 @@
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 89 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 91 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -192,8 +192,8 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (89) to the Command Center test suite.
-2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★; with the Canada exclusion and the SOP purity gate: 522 blocked `CANADA_REVIEWS` (376 ASINs/parents), 3 Tier 1, 3 Tier 2, 235 Tier 3, 2 `NO_MARKETPLACE_MATCH` (US only)**. Differences mean the rules drifted.
+1. Port `qa/regression.js` scenarios (91) to the Command Center test suite.
+2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★; with the Canada exclusion and the SOP purity gate: 522 blocked `CANADA_REVIEWS` (376 ASINs/parents), 3 Tier 1, 2 Tier 2, 236 Tier 3, 2 `NO_MARKETPLACE_MATCH` (US only)**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
 ## 7. Reporting route
