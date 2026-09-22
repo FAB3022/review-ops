@@ -77,7 +77,7 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
             <div class="filters">
               <input id="reviewSearch" type="search" placeholder="Search text, ASIN, brand, ID…">
               <select id="reviewStatusFilter"><option value="all">All workflow states</option><option value="new">New</option><option value="screened">Screened</option><option value="blocked">Blocked</option><option value="routed">Routed (non-removal)</option><option value="validated">Validated</option><option value="approved">Approved</option><option value="drafted">Drafted</option></select>
-              <select id="reviewVerdictFilter"><option value="all">All verdicts</option><option value="clear_violation">CLEAR POLICY VIOLATION</option><option value="hold">HOLD</option><option value="not_eligible">NOT ELIGIBLE</option><option value="unclassified">Unclassified</option></select>
+              <select id="reviewVerdictFilter"><option value="all">All verdicts</option><option value="clear_violation">Tier 1 · file</option><option value="hold">Tier 2 · hold</option><option value="not_eligible">Tier 3 · do not file</option><option value="unclassified">Unclassified</option></select>
               <select id="reviewSort"><option value="priority">Priority first</option><option value="rating">Lowest rating first</option><option value="updated">Recently updated</option></select>
               <select id="reviewRatingFilter" title="Filter by star rating"><option value="all">All ratings</option><option value="neg">1–3★ (negative)</option><option value="1">1★</option><option value="2">2★</option><option value="3">3★</option><option value="4">4★</option><option value="5">5★</option><option value="pos">4–5★ (positive)</option></select>
               <select id="reviewBrandFilter"><option value="all">All brands</option></select>
@@ -125,7 +125,7 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
 
         <section class="view" id="view-implementation">
           <div class="implementation-grid">
-            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.6)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>All 14 Community Guidelines "What's not allowed" sections, quoted verbatim in every case</li><li>Safeguards: never report reviews mentioning our offers or contact outside Amazon</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, follow-up cap</li><li>Audit log with CSV export</li><li>Weekly approved-for-filing ASIN list</li><li>Priority score and priority-first queue</li><li>30-day success rate by policy and brand, auto-pause on stop conditions</li><li>Monday auto-sync from the Master File, plus a full-history scan that keeps only case candidates</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
+            <div class="card"><div class="card-head"><div><h2>What works now</h2><p>Complete browser-based workflow (v5.2, matches Final Proposal v2.7 and SOP v1.0)</p></div><span class="tag success">Available</span></div><ul class="feature-list"><li>Manual intake, real CSV import, Master File ASIN mapping</li><li>Deterministic screening with specific block reasons</li><li>Protected ASIN gate before classification</li><li>Reject-first classifier: CLEAR POLICY VIOLATION · HOLD · NOT ELIGIBLE</li><li>All 14 Community Guidelines "What's not allowed" sections, quoted verbatim in every case</li><li>Safeguards: never report reviews mentioning our offers or contact outside Amazon</li><li>Human validation checklist and decision notes</li><li>Independent AB and Brand Manager decisions (approve/reject/notes/timestamp)</li><li>Case draft with 150-word cap and evidence-quote lock</li><li>Named submitter, weekly cap enforcement, 10-day observation, follow-up cap</li><li>Audit log with CSV export</li><li>Weekly approved-for-filing ASIN list</li><li>Priority score and priority-first queue</li><li>30-day success rate by policy and brand, auto-pause on stop conditions</li><li>Monday auto-sync from the Master File, plus a full-history scan that keeps only case candidates</li><li>SOP v1.0: Tier 1/2/3, purity gate, five-part filing, Phase 1 cadence, control set and attribution</li><li>Products with Canadian buyer reviews excluded</li><li>Settings tab, owners register, version stamp</li><li>CSV templates, CSV exports, JSON backup and restore</li><li>Local persistence between browser sessions</li></ul></div>
             <div class="card"><div class="card-head"><div><h2>Production connections</h2><p>Required for a shared live system</p></div><span class="tag warning">Not connected</span></div><ol class="connection-list"><li><b>Approved review source</b><span>Connect Helium10 review-insights CSV export, Brand Registry email alerts (Gmail Apps Script parser), or scheduled file delivery.</span></li><li><b>Shared database</b><span>Replace browser storage with controlled, multi-user records and backups.</span></li><li><b>User identity</b><span>Map AB, brand managers, submitters, and audit permissions to real accounts.</span></li><li><b>Notification channel</b><span>Send approval and overdue-monitoring alerts to the approved workspace.</span></li><li><b>Seller Central handoff</b><span>Keep final submission manual until Amazon authorizes a supported integration.</span></li></ol></div>
           </div>
           <div class="card roadmap-card"><div class="card-head"><div><h2>Controlled rollout</h2><p>Progress only after the prior phase passes its acceptance check.</p></div></div><div class="roadmap"><article><small>Phase 0</small><h3>Validate</h3><p>Policy register, protected ASINs, schema, test set, roles, and no submissions.</p><b>Exit: agreed logic</b></article><article><small>Phase 1</small><h3>Pilot</h3><p>DECOLURE bamboo lines, US only. Two approvals, weekly cap and follow-up cap as set in Settings.</p><b>Exit: acceptable precision</b></article><article><small>Phase 2</small><h3>Expand</h3><p>Add brands gradually and measure outcomes and false positives.</p><b>Exit: stable controls</b></article><article><small>Phase 3</small><h3>Operate</h3><p>Formal SOP, training, access review, and policy-change audits.</p><b>Exit: operational ownership</b></article></div></div>
@@ -170,11 +170,11 @@ const STORAGE_KEY='amazonReviewOps.v5';
 const APP_VERSION='v5.2';
 const APPROVED_ROUTE='Amazon Brand Registry > Report a Violation > Other Issues';
 /* v5.2 controls from Final Proposal §6: weekly approved list, precision auto-pause, Monday auto-sync */
-const SETTINGS_V52={approvedAsins:[],approvedWeekOf:'',precisionFloor:40,submissionsPaused:false,pauseReason:'',autoSyncMondays:true};
+const SETTINGS_V52={approvedAsins:[],approvedWeekOf:'',precisionFloor:40,submissionsPaused:false,pauseReason:'',autoSyncMondays:true,asinSpacingHours:48,asinMonthlyMax:2,tier2PerWeek:0,canadaExclusion:true};
 const AMAZON_RESPONSES={pending:'Awaiting Amazon response',insufficient_info:'Amazon asked for more information',declined:'Declined — review stays up',removed:'Removed — review taken down'};
-const BUILTIN_POLICY_IDS=['POL-SELLER','POL-NOTDELIVERED','POL-PRICING','POL-LANGUAGE','POL-REPETITIVE','POL-PERSONAL','POL-PROFANITY','POL-HATE','POL-SEXUAL','POL-LINKS','POL-PROMO','POL-COMPENSATED','POL-PLAGIARISM','POL-ILLEGAL','POL-MEDICAL'];
-const POLICY_REGISTER_VERSION=3;
-const RETIRED_POLICY_IDS={'POL-OFFENSIVE':'POL-PROFANITY','POL-INCENTIVE':'POL-COMPENSATED','POL-OFFTOPIC':'POL-SELLER'};
+const BUILTIN_POLICY_IDS=['POL-SELLER','POL-WRONGPRODUCT','POL-PRICING','POL-LANGUAGE','POL-REPETITIVE','POL-PERSONAL','POL-PROFANITY','POL-HATE','POL-SEXUAL','POL-LINKS','POL-PROMO','POL-COMPENSATED','POL-PLAGIARISM','POL-ILLEGAL','POL-MEDICAL'];
+const POLICY_REGISTER_VERSION=4;
+const RETIRED_POLICY_IDS={'POL-OFFENSIVE':'POL-PROFANITY','POL-INCENTIVE':'POL-COMPENSATED','POL-OFFTOPIC':'POL-SELLER','POL-NOTDELIVERED':'POL-SELLER'};
 const OLD_SEED_HEADINGS=['Personal information','Promotional content','Seller, order, or shipping feedback'];
 const KNOWN_BRANDS=['SLEEP SANCTUARY','BAMBOO RESERVE','SLEEPHORIA','DECOLURE','COOLINENS'];
 const today=()=>new Date().toISOString().slice(0,10);
@@ -189,39 +189,41 @@ const csvCell=v=>`"${String(v??'').replace(/"/g,'""')}"`;
 const daysSince=d=>d?Math.floor((Date.now()-new Date(d).getTime())/86400000):Infinity;
 
 /* ── enums ─────────────────────────────────────────────────────────── */
-const VERDICTS={clear_violation:'CLEAR POLICY VIOLATION',hold:'HOLD',not_eligible:'NOT ELIGIBLE'};
+const VERDICTS={clear_violation:'TIER 1 · FILE',hold:'TIER 2 · HOLD',not_eligible:'TIER 3 · DO NOT FILE'};
 const VERDICT_CLASS={clear_violation:'danger',hold:'warning',not_eligible:'neutral'};
 const WORKFLOW_STATES={new:'New',screened:'Screened',blocked:'Blocked',routed:'Routed (non-removal)',validated:'Validated',approved:'Approved',drafted:'Drafted'};
 const WORKFLOW_CLASS={new:'neutral',screened:'info',blocked:'neutral',routed:'info',validated:'info',approved:'success',drafted:'success'};
 const CASE_STATES={draft:'Draft',ready:'Ready to submit',submitted:'Submitted',monitoring:'Monitoring',closed:'Closed'};
 const CASE_CLASS={draft:'info',ready:'success',submitted:'info',monitoring:'warning',closed:'neutral'};
-const BLOCK_REASONS={MISSING_DATA:'Missing required data',REVIEW_REMOVED:'Review already removed at source',PRIOR_FILING:'Prior case already filed for this review',STALE_POLICY:'Referenced policy has not been rechecked in time',PROTECTED_ASIN:'ASIN is on the Protected register',EXCLUSION_MATCH:'Content matches a policy exclusion',NO_MARKETPLACE_MATCH:'No active policy for this marketplace',NO_EVIDENCE_QUOTE:'No exact quote can be extracted from the review'};
+const BLOCK_REASONS={CANADA_REVIEWS:'Product has buyer reviews attached from Canada — excluded',MISSING_DATA:'Missing required data',REVIEW_REMOVED:'Review already removed at source',PRIOR_FILING:'Prior case already filed for this review',STALE_POLICY:'Referenced policy has not been rechecked in time',PROTECTED_ASIN:'ASIN is on the Protected register',EXCLUSION_MATCH:'Content matches a policy exclusion',NO_MARKETPLACE_MATCH:'No active policy for this marketplace',NO_EVIDENCE_QUOTE:'No exact quote can be extracted from the review'};
 const MARKETPLACES_ALL=['US','CA','MX','BR'];
 
 /* ── seeds ─────────────────────────────────────────────────────────── */
 const CG_URL='https://www.amazon.com/gp/help/customer/display.html?nodeId=GLHXEX85MENUE4XF';
 const SC_REVIEW_POLICY_URL='https://sellercentral.amazon.com/gp/help/external/GYRKB5RU3FS5TURN'; // Seller Central: Customer product reviews policies (primary reference)
 const ALL_MP=['US','CA','MX','BR'];
-/* One entry per section of Amazon's Community Guidelines "What's not allowed" (amazon.com, read 21 Sep 2026).
-   caseStatement quotes Amazon's own words; {bullet} is replaced with the exact sub-bullet the detector matched. */
+/* One entry per section of Amazon's Community Guidelines "What's not allowed" (amazon.com, read 21 Sep 2026),
+   aligned to the Negative Review Removal Master SOP v1.0 (9 Sep 2026). caseStatement is the SOP "tie" sentence
+   (Part 4 of a filing) and quotes Amazon's own words. Placeholders: {bullet} exact sub-bullet, {topic}, {product}. */
 const SC_REVIEW_QA_URL='https://sellercentral.amazon.com/gp/help/external/201972160'; // Seller Central: Answers to questions about reviews
-const CG='Amazon\'s Community Guidelines';
+const CGN='Amazon\'s Community Guidelines';
+const SELLER_TOPICS={'Ordering issues and returns':'an ordering issue','Product condition and damage':'the condition of the item as received','Shipping packaging':'the shipping packaging','Shipping cost and speed':'shipping speed or cost','Sellers and the Customer Service they provide':'the seller and its customer service'};
 const seedPolicies=[
-  {id:'POL-SELLER',heading:'Seller, order, or shipping feedback',scUrl:SC_REVIEW_QA_URL,guidance:'Reviews that only focus on sellers and their customer service, ordering issues and returns, shipping packaging, product condition and damage, or shipping cost and speed.',caseStatement:`${CG} (Seller, order, or shipping feedback): "We don't allow reviews or questions and answers that only focus on: {bullet}". "Community content should help customers learn about the product itself, not individual ordering experiences." This review is about the order, not the product.`,exclusions:'Reviews that also assess the product go to HOLD: Amazon only removes reviews that "only focus on" these topics.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-NOTDELIVERED',heading:'Review posted before the product was delivered',guidance:'The reviewer states the product was never received, so the review is not based on actual experience with the product (Compensated or incentivized reviews section).',caseStatement:`${CG} (Compensated or incentivized reviews) state that customers are not allowed to "Post a review for a product before it has been delivered to you. Reviews should be based on actual experience with the product." The reviewer states the product was not received.`,exclusions:'Reviews that also describe using the product.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-PRICING',heading:'Comments about pricing or availability',guidance:'Pricing comments tied to an individual experience (a price elsewhere, a price change, a personal sale price) or availability at a specific store. Comments on price as value are allowed.',caseStatement:`${CG} (Comments about pricing or availability): "Pricing comments related to an individual experience aren't allowed." "we don't allow comments about availability at a specific store." The quoted text is a comment of this kind.`,exclusions:'Value comments such as "not worth the price" or "for only $29 this is great".',keywords:[],exclusionKeywords:[]},
-  {id:'POL-LANGUAGE',heading:'Content written in unsupported languages',guidance:'Reviews written in a language the marketplace does not support, or in a mix of languages. Amazon.com supports English and Spanish.',caseStatement:`${CG} (Content written in unsupported languages): "We only allow content to be written in the supported languages of the Amazon site where it will appear." "content written in a mix of languages isn't allowed." This review is written in {bullet}.`,exclusions:'Product names or single borrowed words.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-REPETITIVE',heading:'Repetitive text, spam, or pictures created with symbols',guidance:'Repetitive text, nonsense and gibberish, content that is just punctuation and symbols, or ASCII art.',caseStatement:`${CG} (Repetitive text, spam, or pictures created with symbols): "We don't allow contributions with distracting content and spam. This restriction includes: {bullet}". The review contains this content.`,exclusions:'Short genuine reviews such as "It\'s ok".',keywords:[],exclusionKeywords:[]},
-  {id:'POL-PERSONAL',heading:'Private information',guidance:'Phone number, email address, mailing address, license plate, data source name (DSN) or order number.',caseStatement:`${CG} (Private information): "Don't post content that invades privacy or shares your own personal information, including: {bullet}". The review contains this information.`,exclusions:'The buyer describing being contacted by the seller is order feedback, not private information.',keywords:[],exclusionKeywords:['seller contacted me','seller emailed me','seller called me','they contacted me','reached out to me','they emailed me','they called me']},
-  {id:'POL-PROFANITY',heading:'Profanity or harassment',guidance:'Profanity, obscenities or name-calling; harassment or threats; attacks on people; libel, defamation or inflammatory content.',caseStatement:`${CG} (Profanity or harassment): "It's OK to question beliefs and expertise, but be respectful. We don't allow: {bullet}". The quoted text is content of this kind.`,exclusions:'Strong but non-abusive criticism of the product is allowed.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-HATE',heading:'Hate speech',guidance:'Hatred for people based on race, ethnicity, nationality, gender, gender identity, sexual orientation, religion, age or disability. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CG} (Hate speech): "You're not allowed to express hatred for people based on characteristics like:" race, ethnicity, nationality, gender, gender identity, sexual orientation, religion, age or disability. The quoted text does this.`,exclusions:'',keywords:[],exclusionKeywords:[]},
-  {id:'POL-SEXUAL',heading:'Sexual content',guidance:'Obscene language, nudity, or sexually explicit images or descriptions. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CG} (Sexual content): "we still don't allow profanity or obscene language. We also don't allow content with nudity or sexually explicit images or descriptions."`,exclusions:'Discussing sensuality products is allowed.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-LINKS',heading:'External links',guidance:'Links to sites outside Amazon, phishing or malware links, and URLs with referrer tags or affiliate codes. Links to other Amazon products are allowed.',caseStatement:`${CG} (External links): "We allow links to other products on Amazon, but not to external sites." "We don't allow URLs with referrer tags or affiliate codes." The review contains such a link.`,exclusions:'Plain links to other products on Amazon.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-PROMO',heading:'Ads, conflicts of interest, promotional content',guidance:'Content whose main purpose is to promote a company, website, author or special offer, and reviews by anyone with a financial interest or other conflict of interest (including competitors).',caseStatement:`${CG} (Ads, conflicts of interest, promotional content): "We don't allow content if its main purpose is to promote a company, website, author, or special offer." "We remove reviews posted by someone with financial interest in the product, or any other conflict of interest."`,exclusions:'Comparisons with competitor products are not removable (Seller Central: Answers to questions about reviews).',keywords:[],exclusionKeywords:[]},
-  {id:'POL-COMPENSATED',heading:'Compensated or incentivized reviews',guidance:'The reviewer states the review was created, edited or removed in exchange for compensation. Amazon Vine reviews are allowed.',caseStatement:`${CG} (Compensated or incentivized reviews): customers are NOT allowed to "Create, edit, or remove a review in exchange for compensation, including payments, refunds, discounts, products, gift cards, warranties, or services."`,exclusions:'Amazon Vine reviews. NEVER report a review that says our team offered a refund or anything else in connection with the review.',keywords:[],exclusionKeywords:['vine']},
-  {id:'POL-PLAGIARISM',heading:'Plagiarism, infringement, or impersonation',guidance:'Content copied from another review or source, intellectual-property infringement, or impersonation.',caseStatement:`${CG} (Plagiarism, infringement, or impersonation): "Only post your own content or content that you have permission to use on Amazon." The same text appears in another review.`,exclusions:'The same reviewer posting their own review on two variations.',keywords:[],exclusionKeywords:[]},
-  {id:'POL-ILLEGAL',heading:'Illegal activities',guidance:'Content encouraging violence, illegal drug use, underage drinking, abuse or fraud, or the dangerous misuse of a product. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CG} (Illegal activities): "Don't post content that encourages illegal activity" and "You're not allowed to encourage the dangerous misuse of a product."`,exclusions:'',keywords:[],exclusionKeywords:[]},
-  {id:'POL-MEDICAL',heading:'Medical claims',guidance:'Statements or claims about preventing or curing serious medical conditions or severe symptoms.',caseStatement:`${CG} (Medical claims): "We don't allow any statements or claims related to preventing or curing serious medical conditions or severe symptoms." The quoted text makes such a claim.`,exclusions:'Describing comfort or sleep quality without a medical claim.',keywords:[],exclusionKeywords:[]}
+  {id:'POL-SELLER',heading:'Seller, order, or shipping feedback',scUrl:SC_REVIEW_QA_URL,guidance:'Reviews that only focus on sellers and their customer service, ordering issues and returns (including lost or never-delivered orders), shipping packaging, product condition and damage, or shipping cost and speed.',caseStatement:`The content concerns {topic} rather than the product. ${CGN} list "{bullet}" under Seller, order, or shipping feedback as content not allowed in customer reviews.`,exclusions:'SOP purity gate: any statement about the product itself (quality, fit, durability, colour, feel, performance, appearance) makes it Tier 3. Complaints about Amazon itself are Tier 2.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-PRICING',heading:'Comments about pricing or availability',guidance:'Pricing comments tied to an individual experience (a price at another store, a price change) or availability at a specific store. Value comments ("not worth the money") are allowed.',caseStatement:`${CGN} state that "Pricing comments related to an individual experience aren't allowed" and give the example "Found this item here for $5 less than at my local store". They add: "These comments aren't allowed because they aren't relevant for all customers."`,exclusions:'Value judgements about the product are permitted and are not filed.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-LANGUAGE',heading:'Content written in unsupported languages',guidance:'Reviews written in a language the marketplace does not support, or mixing languages in one body. Amazon.com supports English and Spanish.',caseStatement:`This review is written in {bullet}. ${CGN} state: "We only allow content to be written in the supported languages of the Amazon site where it will appear." They add that "content written in a mix of languages isn't allowed."`,exclusions:'Spanish on Amazon.com is supported (SOP Error 1). Product names or single borrowed words.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-REPETITIVE',heading:'Repetitive text, spam, or pictures created with symbols',guidance:'Repetitive text, nonsense and gibberish, content that is just punctuation and symbols, or ASCII art.',caseStatement:`${CGN} list "{bullet}" under Repetitive text, spam, or pictures created with symbols as content not allowed.`,exclusions:'Informal language ("lol", "idk", "cheap cheap") is not spam (SOP Error 2).',keywords:[],exclusionKeywords:[]},
+  {id:'POL-PERSONAL',heading:'Private information',guidance:'Phone number, email address, mailing address, license plate, data source name (DSN) or order number.',caseStatement:`The review contains private information. ${CGN} list "{bullet}" under Private information as content not allowed.`,exclusions:'The buyer describing being contacted by the seller is order feedback, not private information.',keywords:[],exclusionKeywords:['seller contacted me','seller emailed me','seller called me','they contacted me','reached out to me','they emailed me','they called me']},
+  {id:'POL-PROFANITY',heading:'Profanity or harassment',guidance:'Profanity, obscenities or name-calling; harassment or threats; attacks on people; libel, defamation or inflammatory content; posting from multiple accounts or coordinating with others.',caseStatement:`${CGN} list "{bullet}" under Profanity or harassment as content not allowed.`,exclusions:'Harsh, hyperbolic or unfair criticism of the product is allowed (SOP Tier 3).',keywords:[],exclusionKeywords:[]},
+  {id:'POL-HATE',heading:'Hate speech',guidance:'Hatred for people based on race, ethnicity, nationality, gender, gender identity, sexual orientation, religion, age or disability. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CGN} state: "You're not allowed to express hatred for people based on characteristics like:" race, ethnicity, nationality, gender, gender identity, sexual orientation, religion, age or disability.`,exclusions:'',keywords:[],exclusionKeywords:[]},
+  {id:'POL-SEXUAL',heading:'Sexual content',guidance:'Nudity or sexually explicit images or descriptions. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CGN} state: "We also don't allow content with nudity or sexually explicit images or descriptions."`,exclusions:'Discussing sensuality products is allowed.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-LINKS',heading:'External links',guidance:'Links to sites outside Amazon, and URLs with referrer tags or affiliate codes. Links to other Amazon products are allowed.',caseStatement:`${CGN} state: "We allow links to other products on Amazon, but not to external sites." They add: "We don't allow URLs with referrer tags or affiliate codes."`,exclusions:'Plain links to other products on Amazon.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-PROMO',heading:'Ads, conflicts of interest, promotional content',guidance:'Content whose main purpose is to promote a company, website, author or special offer; reviews by anyone with a financial interest or conflict of interest, including competitors; steering buyers to another seller or brand.',caseStatement:`${CGN} state: "We don't allow content if its main purpose is to promote a company, website, author, or special offer." They add: "We remove reviews posted by someone with financial interest in the product, or any other conflict of interest."`,exclusions:'A plain comparison with a competitor product is not removable (Seller Central).',keywords:[],exclusionKeywords:[]},
+  {id:'POL-COMPENSATED',heading:'Compensated or incentivized reviews',guidance:'The reviewer states the review was created, edited or removed in exchange for compensation. Amazon Vine reviews are allowed. Amazon provides a dedicated Report Review Compensation form for these cases.',caseStatement:`${CGN} state that customers are NOT allowed to "Create, edit, or remove a review in exchange for compensation, including payments, refunds, discounts, products, gift cards, warranties, or services."`,exclusions:'Amazon Vine reviews. NEVER report a review that says our team offered a refund or anything else in connection with the review.',keywords:[],exclusionKeywords:['vine']},
+  {id:'POL-PLAGIARISM',heading:'Plagiarism, infringement, or impersonation',guidance:'Content copied from another review or source, intellectual-property infringement, or impersonation.',caseStatement:`${CGN} state: "Only post your own content or content that you have permission to use on Amazon." The same text appears in another review.`,exclusions:'The same reviewer posting their own review on two variations.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-ILLEGAL',heading:'Illegal activities',guidance:'Content encouraging violence, illegal drug use, underage drinking, abuse or fraud, advocating physical or financial harm, or the dangerous misuse of a product. No automatic detector: add detection keywords on the Policies page.',caseStatement:`${CGN} state: "You're not allowed to encourage the dangerous misuse of a product."`,exclusions:'',keywords:[],exclusionKeywords:[]},
+  {id:'POL-MEDICAL',heading:'Medical claims',guidance:'Statements or claims about preventing or curing serious medical conditions or severe symptoms.',caseStatement:`${CGN} state: "We don't allow any statements or claims related to preventing or curing serious medical conditions or severe symptoms."`,exclusions:'Describing comfort or sleep quality without a medical claim.',keywords:[],exclusionKeywords:[]},
+  {id:'POL-WRONGPRODUCT',heading:'Review of a different product',sectionLine:'Community content should help customers learn about the product itself',tier2Only:true,guidance:'SOP Tier 2 (no named section): the review describes a different product from the one on this listing (e.g. a bed frame on a fitted-sheet listing).',caseStatement:`This ASIN is {product}. The review describes a different product and does not concern the product on this listing. ${CGN} state that "Community content should help customers learn about the product itself".`,exclusions:'Tier 2 only: filed under the weekly Tier 2 allowance, never in Phase 1.',keywords:[],exclusionKeywords:[]}
 ].map(x=>({...x,url:x.scUrl||SC_REVIEW_POLICY_URL,guidelineUrl:CG_URL,marketplaces:ALL_MP,lastChecked:today(),owner:'AB',status:'active',route:APPROVED_ROUTE}));
 /* Languages each Amazon site supports. amazon.com is stated in the Community Guidelines; CA/MX/BR must be confirmed on each site's language page. */
 const SUPPORTED_LANGS={US:['en','es'],CA:['en','fr'],MX:['es','en'],BR:['pt']};
@@ -287,6 +289,8 @@ function loadState(){
   return {
     version:5,
     policyRegisterVersion:POLICY_REGISTER_VERSION,
+    sopAlignedV1:true,
+    canadaAsins:[],
     reviews:[],
     cases:[],
     policies:structuredClone(seedPolicies),
@@ -297,7 +301,7 @@ function loadState(){
     sheetSyncs:structuredClone(seedSheetSyncs),
     settings:{
       weeklyCap:3,
-      observationDays:10,
+      observationDays:21,
       followUpMax:1,
       stalenessDays:30,
       marketplaces:['US'],
@@ -314,8 +318,8 @@ function migrateState(s){
   s.policies.forEach(p=>{
     p.route=APPROVED_ROUTE;
     const seed=seedPolicies.find(x=>x.id===p.id);
-    if(seed&&(s.policyRegisterVersion||0)<POLICY_REGISTER_VERSION){Object.assign(p,{heading:seed.heading,guidance:seed.guidance,caseStatement:seed.caseStatement,exclusions:seed.exclusions,url:seed.url,guidelineUrl:seed.guidelineUrl,exclusionKeywords:seed.exclusionKeywords,marketplaces:[...new Set([...(p.marketplaces||[]),...seed.marketplaces])]})}
-    if(RETIRED_POLICY_IDS[p.id]&&p.status==='active'){p.status='inactive';p.exclusions=`Retired 21 Sep 2026: replaced by ${RETIRED_POLICY_IDS[p.id]} (Community Guidelines wording).`}
+    if(seed&&(s.policyRegisterVersion||0)<POLICY_REGISTER_VERSION){Object.assign(p,{heading:seed.heading,guidance:seed.guidance,caseStatement:seed.caseStatement,sectionLine:seed.sectionLine,tier2Only:seed.tier2Only,exclusions:seed.exclusions,url:seed.url,guidelineUrl:seed.guidelineUrl,exclusionKeywords:seed.exclusionKeywords,marketplaces:[...new Set([...(p.marketplaces||[]),...seed.marketplaces])]})}
+    if(RETIRED_POLICY_IDS[p.id]&&p.status==='active'){p.status='inactive';p.exclusions=`Retired: replaced by ${RETIRED_POLICY_IDS[p.id]} (Community Guidelines wording and SOP v1.0).`}
     if(!Array.isArray(p.exclusionKeywords))p.exclusionKeywords=seed?.exclusionKeywords||[];
     if(!Array.isArray(p.keywords))p.keywords=[];
   });
@@ -324,6 +328,9 @@ function migrateState(s){
   s.cases.forEach(c=>{c.route=APPROVED_ROUTE});
   s.sheetSyncs.forEach(c=>{if(c.id==='SYNC-SKU')c.name='Master File — SKU LIST'});
   s.settings={...SETTINGS_V52,...s.settings};
+  if(!s.sopAlignedV1){if(s.settings.observationDays===10)s.settings.observationDays=21;s.sopAlignedV1=true}
+  if(!Array.isArray(s.canadaAsins))s.canadaAsins=[];
+  s.reviews.forEach(r=>{if(r.marketplace==='CA'){if(r.asin&&!s.canadaAsins.includes(r.asin))s.canadaAsins.push(r.asin);if(r.parent&&!s.canadaAsins.includes(r.parent))s.canadaAsins.push(r.parent)}});
   s.settings.scriptVersion=APP_VERSION;
   return s;
 }
@@ -392,6 +399,7 @@ function screenReview(r){
   if(missing.length)return {blocked:true,reason:'MISSING_DATA',detail:`Missing: ${missing.join(', ')}`};
   if(r.sourceRemoved)return {blocked:true,reason:'REVIEW_REMOVED',detail:'Marked as removed at source'};
   if(isProtected(r.asin,r.marketplace)){const rec=state.protectedAsins.find(x=>(x.asin===r.asin||x.parent===r.asin)&&(x.marketplace===r.marketplace||x.marketplace==='ALL'));return {blocked:true,reason:'PROTECTED_ASIN',detail:`Protected: ${rec?.reason||'launch/candidate/sensitive'}`}}
+  if(state.settings.canadaExclusion&&hasCanadaReviews(r))return {blocked:true,reason:'CANADA_REVIEWS',detail:r.marketplace==='CA'?'Canadian review — products with Canadian buyer reviews are not submitted':`${r.parent&&r.parent!==r.asin?`Parent ${r.parent}`:r.asin} also has buyer reviews from Canada — not submitted (Erik, 22 Sep 2026)`};
   if(r.reviewId){const prior=priorCaseFor(r.reviewId,r.id);if(prior)return {blocked:true,reason:'PRIOR_FILING',detail:`Case ${prior.id} already exists for this review (${CASE_STATES[prior.status]||prior.status}) — never file the same review twice`}}
   if(!state.settings.marketplaces.includes(r.marketplace))return {blocked:true,reason:'NO_MARKETPLACE_MATCH',detail:`${r.marketplace} is not enabled in Settings (enabled: ${state.settings.marketplaces.join(', ')||'none'})`};
   const applicable=state.policies.filter(p=>p.status==='active'&&(p.marketplaces||[]).includes(r.marketplace));
@@ -438,26 +446,29 @@ const DETECTORS=[
   /* Comments about pricing or availability (individual experience) */
   {policy:'POL-PRICING',bullet:'',confidence:84,mixed:true,why:'Pricing comment about an individual experience, or availability at a specific store.',test:t=>t.match(new RegExp("(?:found|bought|got|saw) (?:it|this|them|these|the same)[^.!?]{0,40}(?:cheaper|for less|\\$\\d+ less|lower)[^.!?]{0,30}(?:at|on|from|elsewhere|than)|(?:cheaper|less expensive|lower price|\\$\\d+ less) (?:at|on|from|than at) "+STORES+"|price (?:went up|increased|jumped|was raised|doubled|dropped)|(?:raised|jacked up|hiked) the price|price gouging|(?:not|isn'?t|wasn'?t) (?:available|in stock) (?:at|in) "+STORES+"|(?:go|head|went) to (?:your |the |my )?(?:local )?(?:"+STORES.slice(3,-1).replace(/\|my local store\|the local store\|the store/,'')+")|pick (?:these|them|it) up (?:at|from|for) "+STORES,'i'))},
   /* Review posted before the product was delivered */
-  {policy:'POL-NOTDELIVERED',bullet:'',confidence:88,mixed:true,onlyFocus:true,why:'Reviewer states the product was never received.',test:t=>t.match(/never (?:arrived|came|showed up|received (?:it|them|the (?:item|product|order|package)|my (?:order|package|item)))|(?:item|order|package|product) (?:never|has not|hasn'?t|did not|didn'?t) (?:arrive|arrived|come|been delivered)|(?:still )?(?:haven'?t|have not|did not|didn'?t) (?:yet )?receive[d]? (?:it|them|the (?:item|product|order|package)|my (?:order|package|item))|still waiting for (?:it|them|my (?:order|package|item)|delivery)|(?:jamais|pas|toujours pas) re[çc]u|(?:no|nunca) (?:me )?lleg[óo]/i)},
+  {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:88,mixed:true,onlyFocus:true,why:'Lost or never delivered order (SOP Tier 1).',test:t=>t.match(/never (?:arrived|came|showed up|received (?:it|them|the (?:item|product|order|package)|my (?:order|package|item)))|(?:item|order|package|product) (?:never|has not|hasn'?t|did not|didn'?t) (?:arrive|arrived|come|been delivered)|(?:still )?(?:haven'?t|have not|did not|didn'?t) (?:yet )?receive[d]? (?:it|them|the (?:item|product|order|package)|my (?:order|package|item))|still waiting for (?:it|them|my (?:order|package|item)|delivery)|(?:jamais|pas|toujours pas) re[çc]u|(?:no|nunca) (?:me )?lleg[óo]/i)},
   /* Seller, order, or shipping feedback — one detector per sub-bullet */
   {policy:'POL-SELLER',bullet:'Sellers and the Customer Service they provide',confidence:82,mixed:true,onlyFocus:true,why:'About the seller or their customer service.',test:t=>t.match(/seller refused|customer service never replied|never replied to my order|seller service|the seller (?:never|didn'?t|did not|won'?t|refused|ignored)|customer service (?:was|is) (?:terrible|awful|horrible|rude|useless|non-?existent|a joke)|no (?:reply|response) from (?:the )?(?:seller|company)|(?:contact|reach|get a hold of|get ahold of) (?:the )?(?:seller|customer service|company)[^.!?]{0,40}(?:no luck|no response|no reply|no way|can'?t|won'?t let)|no way to contact (?:the )?(?:seller|company)|won'?t let me contact|(?:terrible|horrible|awful|poor|bad|worst|rude|non-?existent|zero) customer service|(?:unable to|couldn'?t|could not|can'?t|cannot) get (?:a |my |any )?refund|(?:reached out|emailed|contacted)[^.!?]{0,40}(?:with no|but no|and no|never heard) (?:response|reply|answer)/i)},
-  {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:82,mixed:true,onlyFocus:true,why:'About an ordering issue, refund or return.',test:t=>t.match(/(?:refund|return) (?:process|was denied|request was)|still (?:waiting|haven'?t received) (?:for )?(?:my|a) (?:refund|replacement)|never (?:got|received) (?:my|a) (?:refund|replacement)|refund (?:has been|was|is) (?:delayed|denied|refused)|(?:delayed|denied|refused) (?:my |the )?refund|wrong (?:size|item|colou?r|product) (?:was )?(?:sent|shipped|delivered)|(?:sent|shipped) (?:me )?the wrong|received the wrong|sent [\w/ ]{1,25} when i ordered|ordered [^.!?]{1,30}?,? (?:and|but) (?:i |we )?(?:received|got)|ordered (?:a |the )?\w+(?: \w+)?\. ?(?:came|arrived) (?:in )?\w+|amazon(?:'s)? (?:customer service|support|return policy|refunded)|amazon (?:wasn'?t|was not|won'?t|refused|didn'?t|did not)[^.!?]{0,40}(?:refund|replace|return|help)|limited to amazon'?s (?:standard )?return|(?:couldn'?t|could not|didn'?t|did not|never) (?:even )?open(?:ed)? (?:the |it|them)[\s\S]{0,80}?(?:didn'?t|did not|don'?t) (?:even )?need|empty (?:box|package)|bo[iî]te vide|caja vac[ií]a|(?:no|n'?t (?:seem to )?be a) place (?:on|in) this site/i)},
+  {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:82,mixed:true,onlyFocus:true,why:'About an ordering issue, refund or return.',test:t=>t.match(/(?:refund|return) (?:process|was denied|request was)|still (?:waiting|haven'?t received) (?:for )?(?:my|a) (?:refund|replacement)|never (?:got|received) (?:my|a) (?:refund|replacement)|refund (?:has been|was|is) (?:delayed|denied|refused)|(?:delayed|denied|refused) (?:my |the )?refund|wrong (?:size|item|colou?r|product) (?:was )?(?:sent|shipped|delivered)|(?:sent|shipped) (?:me )?the wrong|received the wrong|sent [\w/ ]{1,25} when i ordered|ordered [^.!?]{1,30}?,? (?:and|but) (?:i |we )?(?:received|got)|ordered (?:a |the )?\w+(?: \w+)?\. ?(?:came|arrived) (?:in )?\w+|(?:couldn'?t|could not|didn'?t|did not|never) (?:even )?open(?:ed)? (?:the |it|them)[\s\S]{0,80}?(?:didn'?t|did not|don'?t) (?:even )?need|empty (?:box|package)|bo[iî]te vide|caja vac[ií]a/i)},
+  {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:70,mixed:true,onlyFocus:true,why:'Complaint about Amazon itself (SOP: Tier 2, weaker than seller feedback).',test:t=>t.match(/amazon(?:'s)? (?:customer service|support|return policy)|amazon (?:wasn'?t|was not|won'?t|refused|didn'?t|did not)[^.!?]{0,40}(?:refund|replace|return|help)|limited to amazon'?s (?:standard )?return|(?:no|n'?t (?:seem to )?be a) place (?:on|in) this site/i)},
   {policy:'POL-SELLER',bullet:'Product condition and damage',confidence:82,mixed:true,onlyFocus:true,why:'The item arrived used, opened or damaged.',test:t=>t.match(/arrived (?:damaged|broken|open|opened|torn|wet|used)|used (?:sheets?|items?|product)[^.!?]{0,40}(?:box|return|previous)|previous owner|(?:were|was) (?:these|this|they|it) (?:new or used|used or new)|got a used (?:item|product|set)|returned item that someone opened|\bused item\b|(?:someone|somebody)'?s used|(?:came|arrived|received|got|were)[^.!?]{0,25}\bused\b(?! to)|bugs in (?:it|them|the)|(?:plastic|bag|seal|wrapping) was (?:opened|open|broken|torn)|different brand/i)},
   {policy:'POL-SELLER',bullet:'Shipping packaging',confidence:82,mixed:true,onlyFocus:true,why:'About the shipping packaging.',test:t=>t.match(/box was crushed|packaging was damaged|(?:box|package|packaging) (?:was|arrived|came) (?:damaged|crushed|open|opened|torn|ripped|wet|broken)|open(?:ed)? packag\w* (?:and )?no box|broken box/i)},
   {policy:'POL-SELLER',bullet:'Product condition and damage',confidence:72,mixed:true,onlyFocus:true,why:'Defect visible on arrival — may be a manufacturing issue, so always HOLD.',test:t=>t.match(/(?:out of|opened) the (?:package|box|bag)[^.!?]{0,50}(?:holes?|stains?|stained|tears?|torn|ripped|spots?|discolou?r\w*|damage\w*)|(?:came|arrived) (?:ripped|torn|stained|dirty|damaged|with (?:a |weird |large |huge )?(?:\w+ )?(?:stains?|holes?|tears?|rips?|hair|dirt))|(?:delivered|arrived) today[^.!?]{0,100}(?:hole|tear|rip|stain)|arriv[ée]e?s? (?:tach[ée]e?s?|d[ée]chir[ée]e?s?|ab[iî]m[ée]e?s?)/i)},
   {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:82,mixed:true,onlyFocus:true,why:'Items missing from the order.',test:t=>t.match(/missing (?:a |one |two |the |\d )?(?:pillow ?cases?|pieces?|items?|parts?|sheets?|fitted sheet|flat sheet)|no pillow ?cases? in the box|(?:didn'?t|did not|never) (?:receive|get) (?:the |my |any )?pillow ?cases?|(?:only|just) (?:received|got) (?:one|1|two|2|three|3|half)|my (?:two|2|missing) (?:missing )?pillow ?cases|\b(?:\d|one|two|three) (?:pillow ?cases?|pieces?) not (?:\d|two|three|four)|\d pictured[^.!?]{0,10}received \d/i)},
   {policy:'POL-SELLER',bullet:'Shipping cost and speed',confidence:82,mixed:true,onlyFocus:true,why:'About delivery speed or shipping cost.',test:t=>t.match(/arrived (?:[\w-]+ ){0,3}late|(?:came|was delivered) (?:[\w-]+ ){0,3}late|(?:delivery|shipping) was (?:slow|late|delayed|expensive|terrible)|took (?:\w+ )?(?:weeks|forever) to (?:arrive|ship|come|deliver)|(?:did|do)n'?t (?:send|arrive|deliver)[^.!?]{0,20}on time|package was lost|had to be re-?shipped|delivered to the wrong|(?:ups|fedex|usps|canada post|purolator|delivery driver) (?:lost|left|damaged|threw|delivered)|shipping (?:cost|fee|charge)s? (?:was|were|is|are) (?:too )?(?:high|expensive|ridiculous)/i)},
+  /* Review of a different product (SOP Tier 2, no named section) */
+  {policy:'POL-WRONGPRODUCT',bullet:'',confidence:60,mixed:false,purity:false,why:'Describes a different product from the one on this listing (SOP Tier 2).',test:(t,r)=>{const name=productLabel(r);if(!/SHEET|PILLOW|COMFORTER|QUILT|DUVET|BLANKET|THROW|CURTAIN|TOWEL|MASK|BATH MAT|CHAIR COVER/i.test(name))return null;const hits=[...new Set((t.match(/\b(?:assembl\w*|planks?|screws?|bolts?|bed ?frames?|batter(?:y|ies)|charg(?:er|ing)|bluetooth|install\w*|drill\w*|wheels?|motor|blades?|nozzles?|cartridges?)\b/gi)||[]).map(x=>x.toLowerCase()))];return hits.length>=2?t.match(new RegExp(hits[0],'i')):null}},
   /* Medical claims */
   {policy:'POL-MEDICAL',bullet:'',confidence:70,mixed:true,why:'Claim about preventing or curing a medical condition.',test:t=>t.match(/(?:cured?s?|cured|heal(?:ed|s)?|prevent(?:s|ed)?|got rid of|eliminated) (?:my |the |her |his |our )?(?:insomnia|eczema|psoriasis|arthritis|acne|allergies|asthma|cancer|diabetes|depression|anxiety|fibromyalgia|night sweats|hot flashes|migraines?|sleep apnea|rash(?:es)?|dermatitis|rosacea)/i)},
   /* Repetitive text, spam, or pictures created with symbols */
-  {policy:'POL-REPETITIVE',bullet:"Content that's just punctuation and symbols",confidence:85,mixed:false,why:'The review has no words, only symbols.',test:(t,r)=>(!/\p{L}/u.test(r.text||'')&&String(r.text||'').trim().length>1)?{index:0,0:t}:null},
-  {policy:'POL-REPETITIVE',bullet:'Repetitive text',confidence:85,mixed:false,why:'The same word or symbol is repeated many times.',test:t=>t.match(/([^\s\w])\1{7,}|(\b\w+\b)(?:\W+\2\b){4,}/i)},
-  {policy:'POL-REPETITIVE',bullet:'Nonsense and gibberish',confidence:80,mixed:false,why:'Keyboard-mash words with no vowels.',test:t=>{const w=(t.match(/\b[bcdfghjklmnpqrstvwxz]{6,}\b/gi)||[]);return w.length>=2?t.match(new RegExp(w[0])):null}},
+  {policy:'POL-REPETITIVE',bullet:"Content that's just punctuation and symbols",confidence:85,mixed:false,purity:false,why:'The review has no words, only symbols.',test:(t,r)=>(!/\p{L}/u.test(r.text||'')&&String(r.text||'').trim().length>1)?{index:0,0:t}:null},
+  {policy:'POL-REPETITIVE',bullet:'Repetitive text',confidence:85,mixed:false,purity:false,why:'The same word or symbol is repeated many times.',test:t=>t.match(/([^\s\w])\1{7,}|(\b\w+\b)(?:\W+\2\b){4,}/i)},
+  {policy:'POL-REPETITIVE',bullet:'Nonsense and gibberish',confidence:80,mixed:false,purity:false,why:'Keyboard-mash words with no vowels.',test:t=>{const w=(t.match(/\b[bcdfghjklmnpqrstvwxz]{6,}\b/gi)||[]);return w.length>=2?t.match(new RegExp(w[0])):null}},
   /* Content written in unsupported languages */
-  {policy:'POL-LANGUAGE',bullet:'',confidence:88,mixed:false,why:'Written in a language this marketplace does not support.',test:(t,r)=>{const d=detectLanguage(r.text);if(!d||d.topScore<4||d.topScore<2*d.secondScore)return null;const ok=SUPPORTED_LANGS[r.marketplace]||[];if(ok.includes(d.top))return null;return {index:0,0:(r.text||'').slice(0,60),bullet:`${LANG_NAMES[d.top]}, which this Amazon site does not support`}}},
-  {policy:'POL-LANGUAGE',bullet:'',confidence:72,mixed:false,why:'Written in a mix of languages.',test:(t,r)=>{const d=detectLanguage(r.text);if(!d||d.topScore<4||d.secondScore<4)return null;return {index:0,0:(r.text||'').slice(0,60),bullet:`a mix of ${LANG_NAMES[d.top]} and ${LANG_NAMES[d.second]}`}}},
+  {policy:'POL-LANGUAGE',bullet:'',confidence:88,mixed:false,purity:false,why:'Written in a language this marketplace does not support.',test:(t,r)=>{const d=detectLanguage(r.text);if(!d||d.topScore<4||d.topScore<2*d.secondScore)return null;const ok=SUPPORTED_LANGS[r.marketplace]||[];if(ok.includes(d.top))return null;return {index:0,0:(r.text||'').slice(0,60),bullet:`${LANG_NAMES[d.top]}, which this Amazon site does not support`}}},
+  {policy:'POL-LANGUAGE',bullet:'',confidence:86,mixed:false,purity:false,why:'Written in a mix of languages (SOP: removable even if both are supported).',test:(t,r)=>{const d=detectLanguage(r.text);if(!d||d.topScore<4||d.secondScore<4)return null;return {index:0,0:(r.text||'').slice(0,60),bullet:`a mix of ${LANG_NAMES[d.top]} and ${LANG_NAMES[d.second]}`}}},
   /* Plagiarism, infringement, or impersonation */
-  {policy:'POL-PLAGIARISM',bullet:'',confidence:70,mixed:false,why:'The same text appears in a review on another product.',test:(t,r)=>{const x=(r.text||'').trim().toLowerCase();if(x.length<40)return null;return state.reviews.some(o=>o.id!==r.id&&o.asin!==r.asin&&(o.text||'').trim().toLowerCase()===x)?{index:t.indexOf((r.text||'').trim()),0:(r.text||'').trim()}:null}}
+  {policy:'POL-PLAGIARISM',bullet:'',confidence:70,mixed:false,purity:false,why:'The same text appears in a review on another product.',test:(t,r)=>{const x=(r.text||'').trim().toLowerCase();if(x.length<40)return null;return state.reviews.some(o=>o.id!==r.id&&o.asin!==r.asin&&(o.text||'').trim().toLowerCase()===x)?{index:t.indexOf((r.text||'').trim()),0:(r.text||'').trim()}:null}}
 ];
 /* SAFEGUARD: never report a review that mentions our team contacting the buyer or offering anything in connection with the review. */
 const SELLER_REVIEW_CONTACT=/(?:seller|company|brand|they|customer service|support)[^.!?]{0,80}(?:offer\w*|sen[dt]|gave|refund\w*|reimburs\w*|gift card|discount|free)[^.!?]{0,80}\breview|\breview[^.!?]{0,60}(?:seller|company|brand|they|customer service)[^.!?]{0,40}(?:offer\w*|sen[dt]|refund\w*|reimburs\w*)|after (?:they|the seller|the company|customer service) (?:read|saw) my review|(?:asked|asking|wants?|wanted|offered)[^.!?]{0,40}(?:change|remove|delete|update|edit) (?:my|the|this) review/i;
@@ -465,8 +476,10 @@ const SELLER_REVIEW_CONTACT=/(?:seller|company|brand|they|customer service|suppo
 const LISTING_MISMATCH=/not (?:like|as) (?:the )?(?:pictures?|photos?|pictured|shown|described|advertised|the description)|(?:not|isn'?t|wasn'?t) the same colou?r as|(?:different|differs?) (?:from|than) (?:the )?(?:pictures?|photos?|listing|description|what i (?:remember|saw|ordered from the photos))|than (?:the |it )?(?:pictures?|photos?|pictured|shown)|as pictured|pic on (?:the )?box|description on (?:the )?site|looked different from what i|not what is described/i;
 /* SAFEGUARD 2: never report a review that mentions contact or offers outside Amazon (Seller Central communication policy). */
 const OFF_AMAZON_CONTACT=/\b(?:emailed|emailing|e-mailed|texted|called|messaged) (?:with )?(?:the |this )?(?:company|seller|brand|them|their)\b|when emailing|link to contact|contact (?:link|form)|(?:their|the brand'?s|the company'?s) (?:own )?(?:website|web site|site)\b|directly from (?:their|the) (?:website|site)|\d+[- ]night (?:sleep )?(?:guarantee|trial)|warranty card|qr code|(?:phone number|e-?mail|contact (?:details|info\w*))[^.!?]{0,30}(?:listed |printed )?on the (?:box|card|insert|package|packaging)/i;
+/* SAFEGUARD 3 (SOP disqualifier): the reviewer received a refund or replacement from us and left the review up. */
+const REFUND_FROM_US=/\b(?:seller|company|brand|they|customer service|support|decolure|sleephoria)\b[^.!?]{0,50}(?:refunded|(?:gave|sent|issued) (?:me )?(?:a |my )?(?:full )?refund|sent (?:me )?(?:a )?(?:replacement|new (?:one|set|pair))|replaced (?:it|them))/i;
 const GENERIC_OPINION=/\b(?:nice|love|loved|lovely|great|beautiful|pretty|perfect|like (?:them|it|these|this|the)|expectations|recommend|quality)\b/i;
-const PRODUCT_TALK=/\b(?:fabric|material|fit|fits|soft|softer|thin|thick|quality|comfortable|comfort|wrinkl\w*|pill(?:s|ing|ed)?|stitch\w*|ripped|rips|tear|tore|hot|cool(?:ing)?|feel|feels|stain\w*|fad(?:e|ed|es)|shr[iu]nk\w*|smell\w*|seams?|elastic|pocket\w*|slippery|scratchy|itchy|breathable|durab\w*|washed|wash|fray\w*|shred\w*|unravel\w*|rough|cheap(?:er|ly)?|straps?|corners?|zippers?|texture|threads?|crafted|slid(?:e|es|ing)|defect\w*|holes?|tears|function\w*|works?|working)\b/i;
+const PRODUCT_TALK=/\b(?:fabric|material|fit|fits|soft|softer|thin|thick|quality|comfortable|comfort|wrinkl\w*|pill(?:s|ing|ed)?|stitch\w*|ripped|rips|tear|tore|hot|cool(?:ing)?|feel|feels|stain\w*|fad(?:e|ed|es)|shr[iu]nk\w*|smell\w*|seams?|elastic|pocket\w*|slippery|scratchy|itchy|breathable|durab\w*|washed|wash|fray\w*|shred\w*|unravel\w*|rough|cheap(?:er|ly)?|straps?|corners?|zippers?|texture|threads?|crafted|slid(?:e|es|ing)|defect\w*|holes?|tears|function\w*|works?|working|silk|satin|microfiber|polyester|cotton|bamboo|linen|rayon)\b/i;
 function productTerms(text){text=String(text).replace(/hot water|cold water|wash (?:it|them) first|washed (?:it|them) first/gi,' ');return new Set((text.match(new RegExp(PRODUCT_TALK.source,'gi'))||[]).map(x=>x.toLowerCase())).size}
 function sentenceAround(text,at,len){
   const start=Math.max(...['.','!','?','\n'].map(ch=>text.lastIndexOf(ch,at-1)))+1;
@@ -481,14 +494,15 @@ function classifyReview(r){
   let hit=null,verdict='not_eligible',confidence=0,evidence='',rationale='',policyId='',mixedCheck=false,matched='';
   if(Number(r.rating)>=4)return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'Rated 4–5 stars — not a removal target.',blockedBy:''};
   if(SELLER_REVIEW_CONTACT.test(norm))return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'Safeguard: the review mentions our team contacting the buyer or offering something in connection with a review. Never report it.',blockedBy:''};
+  if(REFUND_FROM_US.test(norm))return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'SOP disqualifier: the reviewer received a refund or replacement from us and left the review up. Never file.',blockedBy:''};
   if(OFF_AMAZON_CONTACT.test(norm))return {verdict:'not_eligible',policyId:'',confidence:99,evidence:firstSentence(r.text),rationale:'Safeguard: the review mentions contact, a website or an offer outside Amazon. Never report it.',blockedBy:''};
   const listingMismatch=LISTING_MISMATCH.test(norm);
-  let bullet='',onlyFocus=false;
+  let bullet='',onlyFocus=false,purity=true;
   for(const d of DETECTORS){
     if(listingMismatch&&d.policy==='POL-SELLER')continue;
     const m=d.test(norm,r);if(!m)continue;
     const p=applicable.find(x=>x.id===d.policy);if(!p)continue;
-    hit=p;confidence=d.confidence;mixedCheck=d.mixed;onlyFocus=!!d.onlyFocus;rationale=d.why;matched=m[0];bullet=m.bullet||d.bullet||'';
+    hit=p;confidence=d.confidence;mixedCheck=d.mixed;onlyFocus=!!d.onlyFocus;purity=d.purity!==false;rationale=d.why;matched=m[0];bullet=m.bullet||d.bullet||'';
     evidence=sentenceAround(text,m.index,m[0].length);
     break;
   }
@@ -509,10 +523,12 @@ function classifyReview(r){
 
   policyId=hit.id;
   const rest=norm.replace(matched||evidence,' ');
-  const terms=mixedCheck?productTerms(rest):0;
-  if(onlyFocus&&terms>=2){return {verdict:'not_eligible',policyId:'',confidence:90,evidence:firstSentence(r.text),rationale:`${hit.heading}: the review also assesses the product, and Amazon only removes reviews that "only focus" on these topics.`,blockedBy:''}}
-  const mixed=mixedCheck&&(terms>=1||GENERIC_OPINION.test(rest));
-  if(mixed){verdict='hold';rationale+=' Mixed content: the review also comments on the product — a person must confirm the violation is the main point.'}
+  /* SOP Gate 2 (purity): any substantive statement about the product itself → Tier 3, never file. */
+  const terms=purity?productTerms(rest):0;
+  if(terms>=1){return {verdict:'not_eligible',policyId:'',confidence:90,evidence:firstSentence(r.text),rationale:`SOP purity gate: the review also contains a statement about the product itself, so it is Tier 3 (never file) even though it mentions ${hit.heading.toLowerCase()}.`,blockedBy:''}}
+  const mixed=purity&&GENERIC_OPINION.test(rest);
+  if(hit.tier2Only){verdict='hold';rationale+=' SOP Tier 2: no named Amazon section covers this cleanly.'}
+  else if(mixed){verdict='hold';rationale+=' Only a general opinion word about the product ("nice", "love") — a person must confirm it is not a statement about the product.'}
   else if(confidence>=80){verdict='clear_violation'}
   else{verdict='hold';rationale+=' Confidence below threshold — human review required.'}
   return {verdict,policyId,confidence,evidence,rationale,bullet,blockedBy:''};
@@ -642,6 +658,7 @@ function renderDashboard(){
   $('#actionList').innerHTML=actions.length?actions.map(a=>`<div class="action-item"><div class="action-icon">${a[0]}</div><div><b>${a[1]}</b><span>${a[2]}</span></div><button class="text-btn" data-go="${a[3]}">Open</button></div>`).join(''):'<div class="empty-state"><strong>No pending actions</strong><span>The current queue is clear.</span></div>';
 
   renderPilotControls();
+  renderLearning();
 
   const recent=[...state.cases].sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))).slice(0,5);
   $('#recentCases').innerHTML=recent.length?recent.map(c=>{const r=state.reviews.find(x=>x.id===c.reviewId);return `<tr><td><b>${esc(c.id)}</b></td><td>${esc(r?.asin)}<span class="cell-sub">${esc(r?.brand)} · ${esc(r?.marketplace)}</span></td><td>${esc(policyById(r?.classification?.policyId)?.heading||r?.classification?.category||'—')}</td><td><span class="tag ${CASE_CLASS[c.status]||'neutral'}">${CASE_STATES[c.status]||c.status}</span></td><td>${esc(c.submitter||'Unassigned')}</td><td>${fmtDate(c.updatedAt)}</td></tr>`}).join(''):'<tr><td colspan="6"><div class="empty-state"><strong>No cases generated</strong><span>Approved reviews will appear here.</span></div></td></tr>';
@@ -725,6 +742,10 @@ function renderSettings(){
     <div class="field full"><label>Notification channel (Slack channel or email)</label><input id="setNotification" value="${esc(s.notificationChannel||'')}" placeholder="#review-ops or ops@company.com"></div>
     <div class="field full"><label>Approved-for-filing ASINs this week (comma-separated parent or child ASINs; empty = all non-protected)</label><input id="setApprovedAsins" value="${esc((s.approvedAsins||[]).join(','))}" placeholder="B08KQKPKWC, B0D952H31F"></div>
     <div class="field"><label>Approved list — week of</label><input id="setApprovedWeekOf" type="date" value="${esc(s.approvedWeekOf||'')}"></div>
+    <div class="field"><label>Same-ASIN spacing (hours, SOP)</label><input id="setAsinSpacing" type="number" min="0" value="${s.asinSpacingHours}"></div>
+    <div class="field"><label>Max filings per ASIN per 30 days (SOP)</label><input id="setAsinMonthly" type="number" min="1" value="${s.asinMonthlyMax}"></div>
+    <div class="field"><label>Tier 2 filings allowed per week (SOP Phase 1 = 0)</label><input id="setTier2" type="number" min="0" value="${s.tier2PerWeek}"></div>
+    <div class="field"><label class="check-row"><input id="setCanadaExclusion" type="checkbox" ${s.canadaExclusion?'checked':''}> Exclude products with Canadian buyer reviews attached (${(state.canadaAsins||[]).length} ASINs)</label></div>
     <div class="field"><label>Precision floor for auto-pause (%)</label><input id="setPrecisionFloor" type="number" min="0" max="100" value="${s.precisionFloor}"></div>
     <div class="field"><label class="check-row"><input id="setAutoSync" type="checkbox" ${s.autoSyncMondays?'checked':''}> Auto-sync all Sheets on the first open each Monday</label></div>
     <div class="field full"><label>Submissions</label>${s.submissionsPaused?`<p class="modal-note"><b>PAUSED:</b> ${esc(s.pauseReason)}</p><button class="btn secondary" type="button" id="resumeSubmissionsBtn">Resume submissions…</button>`:`<p class="modal-note">Active. The app pauses automatically on a Protected ASIN breach or when precision stays below the floor two weeks running.</p><button class="btn danger" type="button" id="pauseSubmissionsBtn">Pause submissions…</button>`}</div>
@@ -794,6 +815,7 @@ function renderReviewDrawer(r){
 
     <section class="detail-section"><header><h3>Customer outcome and routing</h3><span class="tag ${route.key==='policy'?'info':route.key==='product'?'success':route.key==='blocked'?'neutral':'warning'}">${esc(route.label)}</span></header><div class="detail-content"><p class="modal-note">${esc(route.detail)}</p></div></section>
 
+    ${trackingPanel(r)}
     ${canProceed?`
     <section class="detail-section"><header><h3>Human validation</h3><span class="tag ${v.at?'success':'warning'}">${v.at?'Completed':'Required'}</span></header><div class="detail-content"><div class="checklist"><label class="check-row"><input id="vSource" type="checkbox" ${v.sourceConfirmed?'checked':''}> Source record and ASIN are confirmed</label><label class="check-row"><input id="vQuote" type="checkbox" ${v.exactQuoteConfirmed?'checked':''}> Exact evidence quote is present in the review</label><label class="check-row"><input id="vPolicy" type="checkbox" ${v.policyCurrent?'checked':''}> Live policy and exact heading were checked</label><label class="check-row"><input id="vProduct" type="checkbox" ${v.productOnlyExcluded?'checked':''}> Case is not based only on a negative product experience</label><label class="check-row"><input id="vExclusion" type="checkbox" ${v.exclusionsChecked?'checked':''}> Policy exclusions were considered</label></div><div class="field" style="margin-top:10px"><label>Validation notes</label><textarea id="validationNotes">${esc(v.notes||'')}</textarea></div><div class="field" style="margin-top:8px"><label>Validator name</label><input id="validatorName" value="${esc(v.by||'AB')}"></div></div></section>
 
@@ -825,13 +847,73 @@ function bothDecided(ap){return Boolean(ap?.ab?.decision&&ap?.brandManager?.deci
 const AMAZON_DOMAINS={US:'www.amazon.com',CA:'www.amazon.ca',MX:'www.amazon.com.mx',BR:'www.amazon.com.br'};
 const STAR_FILTER={1:'one_star',2:'two_star',3:'three_star',4:'four_star',5:'five_star'};
 function findOnAmazonUrl(r){return `https://${AMAZON_DOMAINS[r.marketplace]||AMAZON_DOMAINS.US}/product-reviews/${encodeURIComponent(r.asin)}/?sortBy=recent&filterByStar=${STAR_FILTER[r.rating]||'all_stars'}`}
-function guidelineBasis(r,p){if(!p)return '';const cs=p.caseStatement||'';return cs.includes('{bullet}')&&!r.classification?.bullet?`Amazon's Community Guidelines (${p.heading}) do not allow: ${p.guidance}`:cs.replace('{bullet}',r.classification?.bullet||'')}
+function guidelineBasis(r,p){if(!p)return '';const cs=p.caseStatement||'';const b=r.classification?.bullet||'';if(cs.includes('{bullet}')&&!b)return `Amazon's Community Guidelines (${p.heading}) do not allow: ${p.guidance}`;const prod=productLabel(r);return cs.replace(/\{bullet\}/g,b).replace(/\{topic\}/g,SELLER_TOPICS[b]||'the order').replace(/\{product\}/g,prod==='Unmapped ASIN'?'[product name]':`a ${prod.toLowerCase()}`)}
 function productIndex(){const m=new Map();for(const a of state.asinCatalog){if(a.child&&a.productName&&!m.has(a.child))m.set(a.child,a.productName);if(a.parent&&a.productName&&!m.has(a.parent))m.set(a.parent,a.productName)}return m}
 function productLabel(r,idx){return (idx||productIndex()).get(r.asin)||'Unmapped ASIN'}
+/* Products (child or parent ASIN) with any Canadian buyer review in the Master File are excluded from filing. */
+function noteCanada(asin,parent){const set=new Set(state.canadaAsins||[]);if(asin)set.add(asin);if(parent)set.add(parent);state.canadaAsins=[...set]}
+/* Canada tabs are read first so US reviews are screened with the full Canadian ASIN list. */
+function canadaFirst(list){return [...list].sort((a,b)=>(b.mode==='reviews'&&b.defaultMarketplace==='CA')-(a.mode==='reviews'&&a.defaultMarketplace==='CA'))}
+/* Re-screen reviews without a case when their product turns out to have Canadian reviews. */
+function applyCanadaExclusion(){if(!state.settings.canadaExclusion)return 0;let n=0;state.reviews.forEach(r=>{if(caseForReview(r.id)||r.block_reason==='CANADA_REVIEWS'||!hasCanadaReviews(r))return;analyzeReview(r,'canada-exclusion');n++});return n}
+function hasCanadaReviews(r){
+  if(r.marketplace==='CA')return true;
+  const set=new Set(state.canadaAsins||[]);if(!set.size)return false;
+  const parent=r.parent||state.asinCatalog.find(a=>a.child===r.asin)?.parent;
+  return set.has(r.asin)||Boolean(parent&&set.has(parent));
+}
+function setControl(r,on){r.control=on;r.controlAt=on?now():'';r.updatedAt=now();logAudit('review',r.id,on?'Added to control set':'Removed from control set','user','',on?'control':'')}
+function markRemovedOnAmazon(r){r.sourceRemoved=true;r.removedAt=r.removedAt||now();r.updatedAt=now();logAudit('review',r.id,'Marked removed on Amazon','user','live','removed')}
+function learningStats(){
+  const rev=id=>state.reviews.find(x=>x.id===id);
+  const filed=state.cases.filter(c=>c.recordedAt).map(c=>({c,r:rev(c.reviewId)})).filter(x=>x.r);
+  const removedAtOf=x=>x.r.removedAt||(x.c.amazonResponse==='removed'?(x.c.closedAt||x.c.updatedAt):'');
+  const controls=state.reviews.filter(r=>r.control);
+  const tracked=[...filed.map(x=>({t:removedAtOf(x)})),...controls.map(r=>({t:r.removedAt||''}))];
+  const times=tracked.map(x=>x.t).filter(Boolean).map(t=>new Date(t).getTime()).sort((a,b)=>a-b);
+  const sweeps=[];for(let i=0;i<times.length;i++){const inWin=times.filter(t=>t>=times[i]&&t<times[i]+72*3600000).length;if(tracked.length&&inWin/tracked.length>0.02&&inWin>=3)sweeps.push([times[i],times[i]+72*3600000])}
+  const inSweep=t=>sweeps.some(([a,b])=>t>=a&&t<=b);
+  const attribution={ATTRIBUTED:0,BACKGROUND:0,UNCLEAR:0};
+  filed.forEach(x=>{const t=removedAtOf(x);if(!t)return;const ms=new Date(t).getTime(),d=(ms-new Date(x.c.recordedAt).getTime())/86400000;attribution[inSweep(ms)?'BACKGROUND':(d>=1&&d<=21?'ATTRIBUTED':'UNCLEAR')]++});
+  const filedRemoved=filed.filter(x=>removedAtOf(x)).length,controlRemoved=controls.filter(r=>r.removedAt).length;
+  const filedRate=filed.length?filedRemoved/filed.length:null,controlRate=controls.length?controlRemoved/controls.length:null;
+  const bySection={};const key=r=>{const p=policyById(r.classification?.policyId);return p?`${p.heading}${r.classification?.bullet?' · '+r.classification.bullet:''}`:'—'};
+  state.reviews.filter(r=>r.verdict==='clear_violation'||r.control).forEach(r=>{const k=key(r);const o=bySection[k]=bySection[k]||{tier1:0,filed:0,filedRemoved:0,controls:0,controlRemoved:0};if(r.verdict==='clear_violation')o.tier1++;if(r.control){o.controls++;if(r.removedAt)o.controlRemoved++}});
+  filed.forEach(x=>{const o=bySection[key(x.r)]=bySection[key(x.r)]||{tier1:0,filed:0,filedRemoved:0,controls:0,controlRemoved:0};o.filed++;if(removedAtOf(x))o.filedRemoved++});
+  const neg=state.reviews.filter(r=>Number(r.rating)<=3&&r.classification);
+  const tierCounts={t1:neg.filter(r=>r.verdict==='clear_violation').length,t2:neg.filter(r=>r.verdict==='hold').length,t3:neg.filter(r=>r.verdict==='not_eligible').length};
+  const weeks=[];for(let w=7;w>=0;w--){const from=addDays(today(),-7*(w+1)),to=addDays(today(),-7*w);const inW=neg.filter(r=>r.reviewDate>from&&r.reviewDate<=to);weeks.push({to,neg:inW.length,t1:inW.filter(r=>r.verdict==='clear_violation').length,t2:inW.filter(r=>r.verdict==='hold').length})}
+  return {filed:filed.length,filedRemoved,filedRate,controls:controls.length,controlRemoved,controlRate,incremental:filedRate!==null&&controlRate!==null?filedRate-controlRate:null,attribution,sweeps:sweeps.length,bySection,tierCounts,negAnalysed:neg.length,weeks};
+}
+function renderLearning(){
+  let host=$('#learningCard');
+  if(!host){const anchor=$('#pilotControls')?.closest('.card');if(!anchor)return;host=document.createElement('div');host.className='card';host.id='learningCard';anchor.after(host)}
+  const L=learningStats(),pct=x=>x===null?'—':`${Math.round(x*100)}%`;
+  const t1rate=L.negAnalysed?L.tierCounts.t1/L.negAnalysed:0;
+  const rows=Object.entries(L.bySection).sort((a,b)=>b[1].tier1-a[1].tier1).map(([k,o])=>`<tr><td>${esc(k)}</td><td>${o.tier1}</td><td>${o.filed}</td><td>${o.filed?pct(o.filedRemoved/o.filed):'—'}</td><td>${o.controls}</td><td>${o.controls?pct(o.controlRemoved/o.controls):'—'}</td></tr>`).join('')||'<tr><td colspan="6">No Tier 1 reviews yet.</td></tr>';
+  const maxW=Math.max(1,...L.weeks.map(w=>w.neg));
+  const bars=L.weeks.map(w=>`<div title="Week to ${esc(w.to)}: ${w.neg} negative, ${w.t1} Tier 1, ${w.t2} Tier 2" style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div style="height:60px;width:100%;display:flex;flex-direction:column;justify-content:flex-end"><div style="height:${Math.round(60*(w.neg-w.t1-w.t2)/maxW)}px;background:var(--line)"></div><div style="height:${Math.round(60*w.t2/maxW)}px;background:var(--amber)"></div><div style="height:${Math.round(60*w.t1/maxW)}px;background:var(--teal)"></div></div><small style="font-size:.62rem;color:var(--muted)">${esc(w.to.slice(5))}</small></div>`).join('');
+  host.innerHTML=`<div class="card-head"><div><h2>Learning and trends</h2><p>SOP v1.0 measurement: control set, true incremental removal rate and attribution</p></div><button class="btn small secondary" id="markControlsBtn">Mark unfiled Tier 1 as control set</button></div>
+   <div class="control-list">
+    <div><span>Tier 1 rate of negative reviews</span><b>${pct(t1rate)} (${L.tierCounts.t1} of ${L.negAnalysed}) · SOP expects 4–8%${t1rate>0.08?' · TOO PERMISSIVE':''}</b></div>
+    <div><span>Filed removal rate</span><b>${pct(L.filedRate)} (${L.filedRemoved} of ${L.filed} filed)</b></div>
+    <div><span>Control-set removal rate</span><b>${pct(L.controlRate)} (${L.controlRemoved} of ${L.controls} controls)</b></div>
+    <div><span>True incremental removal rate</span><b>${L.incremental===null?'Needs filed cases and a control set':pct(L.incremental)}</b></div>
+    <div><span>Attribution of filed removals</span><b>${L.attribution.ATTRIBUTED} attributed · ${L.attribution.BACKGROUND} background · ${L.attribution.UNCLEAR} unclear${L.sweeps?` · ${L.sweeps} sweep window(s) detected`:''}</b></div>
+   </div>
+   <p class="modal-note" style="margin:10px 0 4px">Negative reviews per week (grey = Tier 3, amber = Tier 2, teal = Tier 1)</p><div style="display:flex;gap:6px;align-items:flex-end">${bars}</div>
+   <div class="table-wrap" style="margin-top:10px"><table><thead><tr><th>Section · sub-bullet</th><th>Tier 1</th><th>Filed</th><th>Removed</th><th>Controls</th><th>Control removed</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="modal-note">Removals are recorded with "Mark removed on Amazon" on each review or by closing a case as Removed. Once the Command Center's daily extraction runs, removals and sweeps are detected automatically.</p>`;
+  $('#markControlsBtn').onclick=()=>{const list=state.reviews.filter(r=>r.verdict==='clear_violation'&&!caseForReview(r.id)&&!r.control);if(!list.length){toast('No unfiled Tier 1 reviews to add');return}if(!confirm(`Add ${list.length} unfiled Tier 1 reviews to the control set? They will not be filed; they are tracked to measure Amazon's background removal rate.`))return;list.forEach(r=>setControl(r,true));saveState();toast(`${list.length} reviews added to the control set`)};
+}
 function isCaseCandidate(r){return r.workflow_state!=='blocked'&&Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict)}
+function trackingPanel(r){
+  if(!(r.verdict==='clear_violation'||r.control||caseForReview(r.id)))return '';
+  return `<section class="detail-section"><header><h3>Tracking (control set and removal)</h3>${r.control?tag('info','Control set'):''}${r.removedAt?tag('success','Removed on Amazon'):''}</header><div class="detail-content"><p class="modal-note">SOP v1.0: Tier 1 reviews we do not file (for example, over the weekly cap) join the control set, so we can measure how many Amazon removes on its own.</p><div class="drawer-actions">${caseForReview(r.id)?'':`<button class="btn small secondary" id="toggleControl">${r.control?'Remove from control set':'Add to control set'}</button>`}${r.removedAt?'':'<button class="btn small secondary" id="markRemoved">Mark removed on Amazon</button>'}</div></div></section>`;
+}
 function ineligibleNote(r){
   const why=r.workflow_state==='blocked'?`Blocked at screening: ${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}${r.block_detail?` — ${esc(r.block_detail)}`:''}.`:!r.classification?'Not analysed yet — select Re-run analysis.':esc(r.classification.rationale||'No Community Guidelines rule is broken.');
-  return `<section class="detail-section"><header><h3>Case eligibility</h3><span class="tag neutral">No removal case</span></header><div class="detail-content"><p class="modal-note"><b>This review cannot become a removal case.</b> ${why}</p><p class="modal-note">Amazon removes a review only when it breaks a Community Guidelines rule. Genuine product feedback (quality, fit, colour, durability) stays up — route it to the product team.</p><p class="modal-note">To find reviews that can proceed: on the Reviews page, filter the verdict to <b>CLEAR POLICY VIOLATION</b> or <b>HOLD</b>. To bring in older reviews, use <b>Scan full history</b> in Settings → Google Sheets sync.</p></div></section>`;
+  return `<section class="detail-section"><header><h3>Case eligibility</h3><span class="tag neutral">No removal case</span></header><div class="detail-content"><p class="modal-note"><b>This review cannot become a removal case.</b> ${why}</p><p class="modal-note">Amazon removes a review only when it breaks a Community Guidelines rule. Genuine product feedback (quality, fit, colour, durability) stays up — route it to the product team.</p><p class="modal-note">To find reviews that can proceed: on the Reviews page, filter the verdict to <b>Tier 1 · file</b> or <b>Tier 2 · hold</b>. To bring in older reviews, use <b>Scan full history</b> in Settings → Google Sheets sync.</p></div></section>`;
 }
 function suggestBM(brand){const o=state.owners.find(x=>x.role==='Brand Manager'&&(x.brands||[]).some(b=>b===brand||b==='ALL'));return o?.name||''}
 
@@ -845,6 +927,8 @@ function renderReviewActions(r){
   $('#drawerFooter').innerHTML=`<div class="next-step"><b>Next required step</b><span>${esc(reviewNextStep(r))}</span></div><div class="drawer-actions"><button class="btn secondary" id="analyzeOne">Re-run analysis</button>${isCaseCandidate(r)?`<button class="btn secondary" id="saveValidation" ${!hasCandidate||!ready?'disabled':''}>Save validation</button><button class="btn primary" id="generateCase" ${!(ap.ab?.decision==='approve'&&ap.brandManager?.decision==='approve')?'disabled':''}>${c?'Open case':'Generate case'}</button>`:''}</div>`;
   $('#analyzeOne').onclick=()=>{analyzeReview(r,'user');saveState();openReview(r.id);toast('Analysis completed')};
   const on=(id,f)=>{const el=$('#'+id);if(el)el.onclick=f};
+  on('toggleControl',()=>{setControl(r,!r.control);saveState();openReview(r.id)});
+  on('markRemoved',()=>{markRemovedOnAmazon(r);saveState();openReview(r.id);toast('Recorded as removed on Amazon')});
   on('saveValidation',()=>saveValidation(r));
   on('approveAB',()=>recordApproval(r,'ab','approve'));
   on('rejectAB',()=>recordApproval(r,'ab','reject'));
@@ -906,25 +990,29 @@ function generateCase(r){
   openCase(c.id);
 }
 
+/* SOP v1.0 section 8: identifiers, the section, the quote, the tie, the request. Nothing else, ≤150 words. */
 function caseDraft(r,p){
-  /* Built only from recorded facts: the review, the policy register entry and the locked quote. No claims are added. */
-  const lines=[
+  const body=String(r.text||'').trim(),ev=String(r.classification?.evidence||'').trim();
+  const full=wordCount(body)<=40&&body.includes(ev);
+  const quote=full?body:ev;
+  const product=productLabel(r);
+  return [
     `ASIN: ${r.asin}`,
-    `Marketplace: ${r.marketplace}`,
-    `Review ID: ${r.reviewId||'Not captured - add it from the review link before submitting'}`,
-    ...(r.sourceRef?[`Review link: ${r.sourceRef}`]:[]),
+    `Product: ${product==='Unmapped ASIN'?'[product name]':product}`,
+    `Review title: "${String(r.title||'').trim()}"`,
+    `Reviewer: ${r.reviewer||'[name as displayed]'}`,
+    `Review date: ${fmtDate(r.reviewDate)}`,
+    `Review URL: ${r.sourceRef||'[direct link]'}`,
+    `Order ID: [add only if the purchase is verified and ours]`,
     '',
-    `Community Guidelines category: ${p.heading}`,
-    `Guideline basis: ${guidelineBasis(r,p)||p.guidance}`,
-    ...(p.url?[`Seller Central policy: ${p.url}`]:[]),
-    ...(p.guidelineUrl?[`Community Guidelines: ${p.guidelineUrl}`]:[]),
+    `Guideline section: ${p.sectionLine||p.heading}`,
     '',
-    'Text in the review:',
-    `"${r.classification.evidence}"`,
+    `The review states${full?' in full':''}: "${quote}"`,
     '',
-    `We request that Amazon review this content against the Community Guidelines and remove it if it does not comply.`
-  ];
-  return lines.join('\n');
+    guidelineBasis(r,p)||p.guidance,
+    '',
+    'We request removal of this review under the cited guideline.'
+  ].join('\n');
 }
 
 function confirmDeleteReview(r){openModal('Delete review record','This removes the review and any linked case from this browser.',`<p>Delete <b>${esc(r.id)}</b> for ASIN <b>${esc(r.asin)}</b>?</p>`,`<button class="btn secondary" id="cancelDelete">Cancel</button><button class="btn danger" id="confirmDelete">Delete</button>`);$('#cancelDelete').onclick=closeModal;$('#confirmDelete').onclick=()=>{state.cases=state.cases.filter(c=>c.reviewId!==r.id);state.reviews=state.reviews.filter(x=>x.id!==r.id);selectedReviews.delete(r.id);logAudit('review',r.id,'Deleted','user',r.workflow_state,'','');saveState();closeModal();closeDrawer();toast('Review and linked case deleted')}}
@@ -981,6 +1069,17 @@ function saveCaseFields(c,quiet=false){
   return true;
 }
 
+/* SOP section 7: same-ASIN spacing, per-ASIN monthly maximum, Tier 2 weekly allowance. */
+function cadenceBlock(c,rv){
+  if(!rv)return '';const s=state.settings;const nowMs=Date.now();
+  const sameAsin=state.cases.filter(x=>x.id!==c.id&&x.recordedAt&&state.reviews.find(y=>y.id===x.reviewId)?.asin===rv.asin);
+  const recent=sameAsin.filter(x=>nowMs-new Date(x.recordedAt).getTime()<s.asinSpacingHours*3600000);
+  if(recent.length)return `SOP spacing: ${rv.asin} was filed less than ${s.asinSpacingHours} hours ago`;
+  const month=sameAsin.filter(x=>nowMs-new Date(x.recordedAt).getTime()<30*86400000);
+  if(month.length>=s.asinMonthlyMax)return `SOP limit: ${rv.asin} already has ${month.length} filings in the last 30 days (max ${s.asinMonthlyMax})`;
+  if(rv.verdict==='hold'){const t2=state.cases.filter(x=>x.id!==c.id&&x.recordedAt&&nowMs-new Date(x.recordedAt).getTime()<7*86400000&&state.reviews.find(y=>y.id===x.reviewId)?.verdict==='hold').length;if(t2>=s.tier2PerWeek)return s.tier2PerWeek?`SOP Tier 2 allowance used: ${s.tier2PerWeek} per week`:'SOP Phase 1: Tier 2 cases are not filed (Tier 2 allowance is 0)'}
+  return '';
+}
 function markSubmitted(c){
   checkStopConditions();
   if(state.settings.submissionsPaused){saveState();toast(`Submissions are paused: ${state.settings.pauseReason}. Resume in Settings.`);return}
@@ -988,6 +1087,7 @@ function markSubmitted(c){
   const weekAgo=new Date();weekAgo.setDate(weekAgo.getDate()-7);
   const weekly=state.cases.filter(x=>x.id!==c.id&&(x.recordedAt||x.submittedAt)&&new Date(x.recordedAt||x.submittedAt)>=weekAgo).length;
   if(weekly>=state.settings.weeklyCap){toast(`Pilot cap reached: ${state.settings.weeklyCap} submissions in seven days`);return}
+  const cad=cadenceBlock(c,rv);if(cad){toast(cad);return}
   const submitter=$('#caseSubmitter').value.trim();
   if(!submitter){toast('Named submitter is required before recording submission');$('#caseSubmitter').focus();return}
   const route=$('#caseRoute').value.trim();
@@ -1004,7 +1104,9 @@ function recordFollowUp(c){
   if((c.followUpCount||0)>=state.settings.followUpMax){toast('Follow-up cap reached for this case');return}
   if(state.settings.submissionsPaused){toast(`Submissions are paused: ${state.settings.pauseReason}`);return}
   const resp=$('#amazonResponse')?.value||c.amazonResponse;
-  if((c.followUpCount||0)>=1&&resp!=='insufficient_info'){toast('A further follow-up is only allowed when Amazon asked for more information');return}
+  if(['declined','removed'].includes(resp)){toast(resp==='declined'?'SOP: never refile a declined case — close it permanently':'The review was removed — close the case instead');return}
+  const days=c.submittedAt?daysSince(c.submittedAt):0;if(days<state.settings.observationDays){toast(`SOP: refile only after ${state.settings.observationDays} days with no removal (${days} so far)`);return}
+  const rv=state.reviews.find(x=>x.id===c.reviewId);if(rv&&rv.verdict!=='clear_violation'){toast('SOP: only Tier 1 cases with a quoted violation may be refiled');return}
   c.amazonResponse=resp;
   const submitter=$('#caseSubmitter').value.trim()||c.submitter;
   if(!submitter){toast('Named submitter is required');return}
@@ -1111,7 +1213,8 @@ async function handleImport(){
     const required=['asin','brand','marketplace','rating','review_text','review_date'];const missing=required.filter(x=>!headers.includes(x));
     if(missing.length){toast(`Missing columns: ${missing.join(', ')}`);return}
     let added=0,duplicates=0,invalid=0;
-    for(const row of rows.slice(1)){const g=n=>row[headers.indexOf(n)]?.trim()||'';const item={reviewId:g('review_id'),sourceRef:g('source_reference'),asin:g('asin'),brand:g('brand'),marketplace:g('marketplace'),rating:Number(g('rating')),title:g('review_title'),text:g('review_text'),reviewDate:g('review_date'),sourceRemoved:['1','true','yes'].includes(g('source_removed').toLowerCase())};
+    for(const row of rows.slice(1)){const g=n=>row[headers.indexOf(n)]?.trim()||'';const item={reviewId:g('review_id'),sourceRef:g('source_reference'),asin:g('asin'),parent:g('parent_asin'),reviewer:g('reviewer'),brand:g('brand'),marketplace:g('marketplace'),rating:Number(g('rating')),title:g('review_title'),text:g('review_text'),reviewDate:g('review_date'),sourceRemoved:['1','true','yes'].includes(g('source_removed').toLowerCase())};
+      if(item.marketplace==='CA')noteCanada(item.asin,item.parent);
       if(!item.asin||!item.brand||!item.marketplace||!item.text||!item.reviewDate||item.rating<1||item.rating>5){invalid++;continue}
       if(duplicateOf(item)){duplicates++;continue}
       const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
@@ -1290,6 +1393,7 @@ async function runSheetSync(config,silent=false){
       if(added>=limit)break;
       const g=f=>mapping[f]!==undefined?String(row[mapping[f]]||'').trim():'';
       if(!g('asin')&&!g('brand')&&!g('text')&&!g('productName'))continue; // spacer row (e.g. only a pre-filled Marketplace cell)
+      if(c.mode==='reviews'&&(normalizeMarketplace(g('marketplace'))||c.defaultMarketplace)==='CA')noteCanada(g('asin'),g('parent'));
       if(c.mode==='asins'){
         const item={brand:g('brand')||brandFromName(g('productName')),parent:g('parent')||g('asin'),child:g('asin')||g('parent'),sku:g('sku'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,productName:g('productName')};
         if(!item.brand||!item.child||!item.marketplace){skipped++;continue}
@@ -1299,7 +1403,7 @@ async function runSheetSync(config,silent=false){
         const rawDate=g('reviewDate');
         const parsedDate=parseSheetDate(rawDate);
         if(sinceDate&&parsedDate&&parsedDate<sinceDate){filtered++;continue}
-        const item={reviewId:g('reviewId')||reviewIdFromLink(g('sourceRef')),sourceRef:g('sourceRef'),asin:g('asin'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating:Number(g('rating'))||0,title:g('title'),text:g('text'),reviewDate:parsedDate||rawDate};
+        const item={reviewId:g('reviewId')||reviewIdFromLink(g('sourceRef')),sourceRef:g('sourceRef'),asin:g('asin'),parent:g('parent'),reviewer:g('reviewer'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating:Number(g('rating'))||0,title:g('title'),text:g('text'),reviewDate:parsedDate||rawDate};
         if(!item.asin||!item.brand||!item.marketplace||!item.text||!item.reviewDate||item.rating<1||item.rating>5){invalid++;continue}
         if(duplicateOf(item)){skipped++;continue}
         const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
@@ -1309,6 +1413,7 @@ async function runSheetSync(config,silent=false){
         added++;
       }
     }
+    if(c.mode==='reviews'&&c.defaultMarketplace==='CA')applyCanadaExclusion();
     c.lastSyncedAt=now();c.lastAdded=added;c.lastSkipped=skipped;c.lastInvalid=invalid;c.lastFiltered=filtered;c.lastError='';
     logAudit('sync',c.id,`Sheet-sync ran: +${added} · ${skipped} dup · ${invalid} invalid${filtered?` · ${filtered} outside date range`:''}`,'user','',String(added),`Tab: ${c.tabName}`);
     saveState();
@@ -1329,16 +1434,17 @@ async function scanFullHistory(silent=false){
   if(!silent&&!confirm(`Scan every review in the Master File (all dates)? Only reviews that can become cases (CLEAR or HOLD) are kept. Marketplaces enabled in Settings: ${state.settings.marketplaces.join(', ')}.`))return null;
   if(!silent)toast('Scanning full history…');
   let scanned=0,kept=0,dup=0;const errors=[];
-  for(const c of state.sheetSyncs.filter(x=>x.mode==='reviews')){
+  for(const c of canadaFirst(state.sheetSyncs.filter(x=>x.mode==='reviews'))){
     try{
       const rows=parseCSV(await fetchSheetCsv(c.sheetId,c.tabName,c.range));if(rows.length<2)continue;
       const mapping={...autoMapColumns(rows[0]),...(c.columnOverrides||{})};
       for(const row of rows.slice(1)){
         const g=f=>mapping[f]!==undefined?String(row[mapping[f]]||'').trim():'';
         if(!g('asin')&&!g('brand')&&!g('text'))continue;
+        if((normalizeMarketplace(g('marketplace'))||c.defaultMarketplace)==='CA')noteCanada(g('asin'),g('parent'));
         const rating=Number(g('rating'))||0;if(rating>=4||rating<1)continue;
         scanned++;
-        const item={reviewId:g('reviewId')||reviewIdFromLink(g('sourceRef')),sourceRef:g('sourceRef'),asin:g('asin'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating,title:g('title'),text:g('text'),reviewDate:parseSheetDate(g('reviewDate'))||g('reviewDate')};
+        const item={reviewId:g('reviewId')||reviewIdFromLink(g('sourceRef')),sourceRef:g('sourceRef'),asin:g('asin'),parent:g('parent'),reviewer:g('reviewer'),brand:g('brand'),marketplace:normalizeMarketplace(g('marketplace'))||c.defaultMarketplace,rating,title:g('title'),text:g('text'),reviewDate:parseSheetDate(g('reviewDate'))||g('reviewDate')};
         if(duplicateOf(item)){dup++;continue}
         const review={...item,id:nextReviewId(),collectedAt:now(),workflow_state:'new',verdict:'',block_reason:'',classification:null,validation:{},approvals:{ab:null,brandManager:null},updatedAt:now()};
         const logLen=state.auditLog.length;state.reviews.push(review);analyzeReview(review,'history-scan');
@@ -1347,6 +1453,7 @@ async function scanFullHistory(silent=false){
       }
     }catch(e){errors.push(`${c.name}: ${e.message}`)}
   }
+  applyCanadaExclusion();
   logAudit('sync','history',`Full-history scan: ${scanned} negative reviews checked, ${kept} candidates kept, ${dup} already present`,'user','',String(kept),errors.join('; '));
   saveState();
   if(!silent)toast(`Full history: ${kept} candidates added · ${scanned} negative reviews checked · ${dup} already here${errors.length?` · ${errors.length} tab errors`:''}`);
@@ -1355,11 +1462,12 @@ async function scanFullHistory(silent=false){
 async function syncAllSheets(){
   toast('Syncing all configs…');
   let total={added:0,skipped:0,invalid:0,errors:0};
-  for(const c of state.sheetSyncs){
+  for(const c of canadaFirst(state.sheetSyncs)){
     const r=await runSheetSync(c,true);
     if(r?.error)total.errors++;
     else{total.added+=r?.added||0;total.skipped+=r?.skipped||0;total.invalid+=r?.invalid||0}
   }
+  applyCanadaExclusion();saveState();
   toast(`All syncs done: +${total.added} · ${total.skipped} dup · ${total.invalid} invalid${total.errors?` · ${total.errors} failed`:''}`);
 }
 
@@ -1516,6 +1624,10 @@ function saveSettings(){
   s.approvedWeekOf=$('#setApprovedWeekOf').value;
   s.precisionFloor=Math.min(100,Math.max(0,Number($('#setPrecisionFloor').value)||0));
   s.autoSyncMondays=$('#setAutoSync').checked;
+  s.asinSpacingHours=Math.max(0,Number($('#setAsinSpacing').value)||0);
+  s.asinMonthlyMax=Math.max(1,Number($('#setAsinMonthly').value)||1);
+  s.tier2PerWeek=Math.max(0,Number($('#setTier2').value)||0);
+  s.canadaExclusion=$('#setCanadaExclusion').checked;
   $$('#ownersTableBody input[data-owner-idx]').forEach(inp=>{const i=Number(inp.dataset.ownerIdx),f=inp.dataset.field;if(f==='name')state.owners[i].name=inp.value.trim();else state.owners[i][f]=inp.value.split(',').map(x=>x.trim()).filter(Boolean)});
   logAudit('settings','global','Settings updated','user',before,JSON.stringify(state.settings));
   saveState();toast('Settings saved');

@@ -2,13 +2,14 @@
 
 **For:** Joseph (Command Center build)
 **Status:** logic is final and tested in the standalone dashboard (v5.2). It needs a home with shared data, logins and scheduled jobs, which is the Command Center.
-**Proposal of record:** `NRR_Proposal_v2.6_for_Erik.docx` (Erik has confirmed: internal-only, no MajestIQ).
+**Proposal of record:** `NRR_Proposal_v2.7_for_Erik.docx`. **Operating standard:** *Negative Review Removal Master SOP v1.0* (9 Sep 2026, in `Erik Docs/`). Erik has confirmed: internal-only, no MajestIQ, and no filing on products with Canadian buyer reviews.
+**AI build:** see [`AI_CLASSIFIER_SPEC.md`](AI_CLASSIFIER_SPEC.md) for the reject-first classifier, drafter, validators and learning loop.
 
 | | |
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 81 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 89 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -29,6 +30,22 @@ The reference app runs entirely in the browser (`localStorage`). Treat it as the
 
 ---
 
+## 1a. SOP v1.0 rules the port must keep
+- **Tiers:** Tier 1 = file; Tier 2 = hold (no clean named section, e.g. a different product, a complaint about Amazon itself, a scam accusation, a medical claim; not filed in Phase 1); Tier 3 = never file.
+- **Purity gate (SOP Gate 2):** any statement about the product itself anywhere in the review → Tier 3, for every section except whole-content ones (language, spam, plagiarism).
+- **Disqualifiers:** refund or replacement from us; our offers or contact outside Amazon; competitor comparisons; value comments; informal language; Spanish on Amazon.com; rating-content mismatch.
+- **Filing (SOP section 8), exactly five parts:**
+  1. Identifiers: ASIN, product, review title, reviewer, date, URL, Order ID.
+  2. "Guideline section: …"
+  3. "The review states [in full]: "…""
+  4. One tie sentence in Amazon's words.
+  5. "We request removal of this review under the cited guideline."
+
+  ≤150 words, no links, no argument about the reviewer.
+- **Phase 1 cadence:** 3 per week; 48 hours between filings on the same ASIN; at most 2 per ASIN per 30 days; no Tier 2; one refile only after 21 days with no removal, and never after a decline.
+- **Channels:** primary is Brand Registry → Report a Violation → Other issues; secondary is the "Report" link under the review; compensation cases use the Report Review Compensation form. **community-help@amazon.com is retired.**
+- **Measurement:** control set, true incremental rate, attribution and sweep detection (see the AI spec, section 5).
+
 ## 2. Pipeline
 
 ```
@@ -48,6 +65,7 @@ If there is no review ID but the link matches `/customer-reviews\/(R[A-Z0-9]{8,}
 | 1 | `MISSING_DATA` | `asin`, `brand`, `marketplace`, `text`, `reviewDate` all present; `rating` 1–5 |
 | 2 | `REVIEW_REMOVED` | `sourceRemoved` flag not set |
 | 3 | `PROTECTED_ASIN` | ASIN, or its parent from the ASIN catalogue, is on the active Protected register for this marketplace (or `ALL`) |
+| 3b | `CANADA_REVIEWS` | **Erik, 22 Sep 2026:** the review is Canadian, or its ASIN or parent appears in any Canadian review (`state.canadaAsins`, built from every Canada-tab row). Canada tabs are read first, and existing reviews are re-screened when the list grows |
 | 4 | `PRIOR_FILING` | No other case exists for this Amazon review ID, **open or closed** (never file the same review twice). The review's own case does not count |
 | 5 | `NO_MARKETPLACE_MATCH` | Marketplace is enabled in settings **and** at least one active policy covers it |
 | 6 | `STALE_POLICY` | Not every applicable policy is older than `stalenessDays` (30) |
@@ -73,9 +91,9 @@ Default verdict is **NOT ELIGIBLE**. Text = `title + "
 | `POL-COMPENSATED` | Compensated or incentivized reviews | reviewer's own incentive ("in exchange for an honest review"); exclusion keyword `vine` | CLEAR |
 | `POL-PROMO` | Ads, conflicts of interest, promotional content | conflict of interest ("I work for a competitor"), promo codes, "visit our website", social handles | CLEAR |
 | `POL-LINKS` | External links | non-Amazon URLs; Amazon URLs with `tag=`/`ref=` affiliate codes (plain Amazon links are allowed) | CLEAR |
-| `POL-PRICING` | Comments about pricing or availability | price elsewhere or at a named store ("go to your local Walmart"), price changes, price gouging (value comments not matched) | HOLD if mixed |
-| `POL-NOTDELIVERED` | Review posted before delivery (Compensated section bullet) | never arrived or received, still waiting (EN/FR/ES) | only-focus |
-| `POL-SELLER` | Seller, order, or shipping feedback | one detector per sub-bullet: *Sellers and the Customer Service they provide*; *Ordering issues and returns* (wrong item, refund delays, missing items, empty box, never opened); *Product condition and damage* (used, opened, bugs, defects on arrival = HOLD); *Shipping packaging*; *Shipping cost and speed* | only-focus |
+| `POL-PRICING` | Comments about pricing or availability | price elsewhere or at a named store ("go to your local Walmart"), price changes, price gouging (value comments not matched) | Tier 1; Tier 3 if any product statement |
+| `POL-WRONGPRODUCT` | Review of a different product (no named section; SOP Tier 2) | textile listing + ≥2 foreign-product terms (assemble, planks, bed frame, batteries…) | Tier 2 |
+| `POL-SELLER` | Seller, order, or shipping feedback | one detector per sub-bullet: *Sellers and the Customer Service they provide*; *Ordering issues and returns* (wrong item, refund delays, missing items, empty box, never opened); *Product condition and damage* (used, opened, bugs, defects on arrival = HOLD); *Shipping packaging*; *Shipping cost and speed* | Tier 1 if only about the order; Tier 3 if any product statement; Amazon-itself = Tier 2 |
 | `POL-MEDICAL` | Medical claims | "cured my eczema/insomnia…" | HOLD |
 | `POL-REPETITIVE` | Repetitive text, spam, or pictures created with symbols | symbols only, repeated words, keyboard-mash gibberish | CLEAR |
 | `POL-LANGUAGE` | Content written in unsupported languages | stopword language detection vs `SUPPORTED_LANGS` (US en/es stated by Amazon; CA en/fr, MX es/en, BR pt still to confirm); mixed-language = HOLD | CLEAR / HOLD |
@@ -83,11 +101,12 @@ Default verdict is **NOT ELIGIBLE**. Text = `title + "
 | `POL-HATE`, `POL-SEXUAL`, `POL-ILLEGAL` | Hate speech; Sexual content; Illegal activities | no automatic detector; add detection keywords on the Policies page | HOLD via keywords |
 | any | manual keywords | the policy's `keywords` | HOLD |
 
-6. **Verdict rules.** "Only-focus" rules (Seller/order feedback and review-before-delivery) follow Amazon's wording, which removes reviews that "only focus on" these topics. The review minus the matched phrase is scored for product assessment (`PRODUCT_TALK`, `GENERIC_OPINION`):
-   - 2 or more product-assessment terms → **NOT ELIGIBLE** (the review also reviews the product);
-   - 1 term or a product opinion ("nice", "love", "quality") → **HOLD**;
-   - none → **CLEAR** if confidence ≥ 80.
-   For other policies, any product talk → HOLD; otherwise confidence ≥ 80 → CLEAR.
+6. **Verdict rules (SOP v1.0).** The review minus the matched phrase is checked for product statements (`PRODUCT_TALK`, which includes materials such as silk, satin and microfiber):
+   - any product statement → **Tier 3** (purity gate; not applied to language, spam or plagiarism);
+   - only a general opinion word ("nice", "love") → **Tier 2**, for a person to judge;
+   - `tier2Only` policies (different product) → **Tier 2**;
+   - otherwise confidence ≥ 80 → **Tier 1**, below 80 → **Tier 2** (Amazon-itself complaints, name-calling, defamation, medical claims).
+   Never-delivered orders are cited as *Ordering issues and returns* (SOP), not the compensated-reviews bullet.
 7. Store `{policyId, bullet, confidence, evidence, rationale}` on the review. The verdict is **separate** from workflow state; nothing advances automatically.
 
 **Not removable per Seller Central (never flag):** reviews comparing our product with a competitor's ("Can Amazon remove a review that compares my product with a competitor's product…? No.").
@@ -173,12 +192,12 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (81) to the Command Center test suite.
-2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 12 CLEAR (all seller, order or shipping feedback), 21 HOLD (19 seller/order, 1 review before delivery, 1 pricing), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
+1. Port `qa/regression.js` scenarios (89) to the Command Center test suite.
+2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★; with the Canada exclusion and the SOP purity gate: 522 blocked `CANADA_REVIEWS` (376 ASINs/parents), 3 Tier 1, 3 Tier 2, 235 Tier 3, 2 `NO_MARKETPLACE_MATCH` (US only)**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
 ## 7. Reporting route
-The route stays **Brand Registry → Report a Violation → Other Issues** (Erik's instruction). Amazon's pages also document: the **"Report"** link under the review (Seller Central, *Answers to questions about reviews*), email to **community-help@amazon.com** (*Customer product reviews*), and **Seller Central → Help → Get Support → Report Abuse** (Community Guidelines). Changing the route is Erik's decision.
+The route stays **Brand Registry → Report a Violation → Other Issues** (Erik's instruction). Per SOP v1.0: the **"Report"** link under the review is the secondary channel, and the **Report Review Compensation form** is for compensation cases. **community-help@amazon.com is retired** (an Amazon moderator confirmed in 2026), even though an older Seller Central page still lists it. Seller Central → Report Abuse is for attacks by competitors.
 
 ## 8. Open items
 - Erik to confirm the notification channel, weekly cap (proposed 5/week), follow-up cap (proposed 2) and Protected ASIN additions.
