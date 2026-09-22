@@ -9,9 +9,9 @@
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 91 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 97 checks, run with `npm i playwright-core && node qa/regression.js index.html`. A full QA pass (six testers, one per area) was run on 22 Sep 2026 and its fixes are in v5.2 |
 
-The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
+The reference app runs entirely in the browser (IndexedDB; older copies in `localStorage` are moved across automatically on first load). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
 ---
 
@@ -19,7 +19,7 @@ The reference app runs entirely in the browser (`localStorage`). Treat it as the
 
 | Needed | Why the reference app can't do it | Command Center piece |
 |---|---|---|
-| Shared database | Data lives in each person's browser; AB and a BM on different machines see different queues. The browser also can't hold the ~5,000-review history (storage quota exceeded) | Tables in §3 |
+| Shared database | Data lives in each person's browser; AB and a BM on different machines see different queues. Two tabs in one browser are guarded (a stale tab stops saving), but there is no sharing between people | Tables in §3 |
 | Logins and roles | Approver names are typed in, so "AB ≠ BM" is enforced only by name | AB, Brand Manager, Validator, Submitter, Viewer (read-only) |
 | Review ingestion | Sync reads the Master File via the public `gviz` CSV link, so the sheet must be shared as "anyone with the link". Most rows have no Amazon review ID | Feed from **Ayush's review extraction engine** (has review ID and link); Master File as fallback |
 | Scheduled jobs | The "Monday sync" only runs when someone opens the page on a Monday | Cron: daily ingest (or at least Monday 7-day pull) and daily stop-condition check |
@@ -35,7 +35,7 @@ The reference app runs entirely in the browser (`localStorage`). Treat it as the
 - **Purity gate (SOP Gate 2):** any statement about the product itself anywhere in the review → Tier 3, for every section except whole-content ones (language, spam, plagiarism).
 - **Disqualifiers:** refund or replacement from us; our offers or contact outside Amazon; competitor comparisons; value comments; informal language; Spanish on Amazon.com; rating-content mismatch.
 - **Filing (SOP section 8), exactly five parts:**
-  1. Identifiers: ASIN, product, review title, reviewer, date, URL, Order ID.
+  1. Identifiers: ASIN, product, review title, reviewer, date, URL, and Order ID when known.
   2. "Guideline section: …"
   3. "The review states [in full]: "…""
   4. One tie sentence in Amazon's words.
@@ -51,7 +51,7 @@ The reference app runs entirely in the browser (`localStorage`). Treat it as the
 ```
 ingest → dedupe → SCREEN (8 gates) → CLASSIFY → post-gates (7, 8)
        → VALIDATE (human) → APPROVE (AB + BM) → DRAFT → SUBMIT (manual)
-       → MONITOR → FOLLOW-UP → CLOSE → success rate / auto-pause
+       → MONITOR → REFILE → CLOSE → success rate / auto-pause
 ```
 
 ### 2.1 Dedupe on ingest
@@ -75,31 +75,31 @@ If there is no review ID but the link matches `/customer-reviews\/(R[A-Z0-9]{8,}
 ### 2.3 Classifier (`classifyReview`)
 **Source of truth:** Amazon's Community Guidelines, "What's not allowed" (amazon.com, read 21 Sep 2026, PDF in the project folder), plus the Seller Central pages *Customer product reviews policies* (GYRKB5RU3FS5TURN) and *Answers to questions about reviews* (201972160). Every case quotes Amazon's own words. An independent check confirmed every quoted string is verbatim.
 
-Default verdict is **NOT ELIGIBLE**. Text = `title + "
+Default verdict is **Tier 3 (not eligible)**. Text = `title + "
 " + text` (the line break keeps the evidence quote to one real sentence). Matching runs on a copy with straight apostrophes, so phone-typed `’` still matches; evidence is quoted from the original text.
 
-1. **Rating 4–5 → NOT ELIGIBLE**, never a candidate.
-2. **Safeguard 1 (`SELLER_REVIEW_CONTACT`) → NOT ELIGIBLE, never report:** the review mentions our team offering a refund, gift, discount or anything else in connection with a review, or asking the buyer to change or remove it. Amazon lists these as *seller* violations.
-3. **Safeguard 2 (`OFF_AMAZON_CONTACT`) → NOT ELIGIBLE, never report:** the review mentions contact, a website, a guarantee or contact details on packaging outside Amazon. Seller Central requires all customer contact to stay in Buyer-Seller Messaging.
+1. **Rating 4–5 → Tier 3**, never a candidate.
+2. **Safeguard 1 (`SELLER_REVIEW_CONTACT`) → Tier 3, never report:** the review mentions our team offering a refund, gift, discount or anything else in connection with a review, or asking the buyer to change or remove it. Amazon lists these as *seller* violations.
+3. **Safeguard 2 (`OFF_AMAZON_CONTACT`) → Tier 3, never report:** the review mentions contact, a website, a guarantee or contact details on packaging outside Amazon. Seller Central requires all customer contact to stay in Buyer-Seller Messaging.
 4. **Listing mismatch (`LISTING_MISMATCH`):** colour, size or look "not like the pictures" is product feedback, so the Seller/order detectors are skipped.
 5. The first matching detector in `DETECTORS` wins. There is one policy per Community Guidelines section; `bullet` is the exact sub-bullet quoted in the case.
 
 | Policy | Community Guidelines section | What it matches | Verdict |
 |---|---|---|---|
-| `POL-PERSONAL` | Private information | email, order number (`\d{3}-\d{7}-\d{7}`), phone (3-3-4), mailing address | CLEAR |
-| `POL-PROFANITY` | Profanity or harassment | profanity list (CLEAR); name-calling of people, not self (HOLD); "scam/fraud/thieves" accusations = libel/defamation (HOLD) | CLEAR / HOLD |
-| `POL-COMPENSATED` | Compensated or incentivized reviews | reviewer's own incentive ("in exchange for an honest review"); exclusion keyword `vine` | CLEAR |
-| `POL-PROMO` | Ads, conflicts of interest, promotional content | conflict of interest ("I work for a competitor"), promo codes, "visit our website", social handles | CLEAR |
-| `POL-LINKS` | External links | non-Amazon URLs; Amazon URLs with `tag=`/`ref=` affiliate codes (plain Amazon links are allowed) | CLEAR |
+| `POL-PERSONAL` | Private information | email, order number (`\d{3}-\d{7}-\d{7}`), phone (3-3-4), mailing address | Tier 1 |
+| `POL-PROFANITY` | Profanity or harassment | profanity list (Tier 1); name-calling of people, not self (Tier 2); "scam/fraud/thieves" accusations = libel/defamation (Tier 2) | Tier 1 / Tier 2 |
+| `POL-COMPENSATED` | Compensated or incentivized reviews | reviewer's own incentive ("in exchange for an honest review"); exclusion keyword `vine` | Tier 1 |
+| `POL-PROMO` | Ads, conflicts of interest, promotional content | conflict of interest ("I work for a competitor"), promo codes, "visit our website", social handles | Tier 1 |
+| `POL-LINKS` | External links | non-Amazon URLs; Amazon URLs with `tag=`/`ref=` affiliate codes (plain Amazon links are allowed) | Tier 1 |
 | `POL-PRICING` | Comments about pricing or availability | price elsewhere or at a named store ("go to your local Walmart"), price changes, price gouging (value comments not matched) | Tier 1; Tier 3 if any product statement |
 | `POL-WRONGPRODUCT` | Review of a different product (no named section; SOP Tier 2) | textile listing + ≥2 foreign-product terms (assemble, planks, bed frame, batteries…) | Tier 2 |
-| `POL-SELLER` | Seller, order, or shipping feedback | one detector per sub-bullet: *Sellers and the Customer Service they provide*; *Ordering issues and returns* (wrong item, refund delays, missing items, empty box, never opened); *Product condition and damage* (used, opened, bugs, defects on arrival = HOLD); *Shipping packaging*; *Shipping cost and speed* | Tier 1 if only about the order; Tier 3 if any product statement; Amazon-itself = Tier 2 |
-| `POL-MEDICAL` | Medical claims | "cured my eczema/insomnia…" | HOLD |
-| `POL-REPETITIVE` | Repetitive text, spam, or pictures created with symbols | symbols only, repeated words, keyboard-mash gibberish | CLEAR |
-| `POL-LANGUAGE` | Content written in unsupported languages | stopword language detection vs `SUPPORTED_LANGS` (US en/es stated by Amazon; CA en/fr, MX es/en, BR pt still to confirm); mixed-language = HOLD | CLEAR / HOLD |
-| `POL-PLAGIARISM` | Plagiarism, infringement, or impersonation | same ≥40-character text on another ASIN | HOLD |
-| `POL-HATE`, `POL-SEXUAL`, `POL-ILLEGAL` | Hate speech; Sexual content; Illegal activities | no automatic detector; add detection keywords on the Policies page | HOLD via keywords |
-| any | manual keywords | the policy's `keywords` | HOLD |
+| `POL-SELLER` | Seller, order, or shipping feedback | one detector per sub-bullet: *Sellers and the Customer Service they provide*; *Ordering issues and returns* (wrong item, refund delays, missing items, empty box, never opened); *Product condition and damage* (used, opened, bugs, defects on arrival = Tier 2); *Shipping packaging*; *Shipping cost and speed* | Tier 1 if only about the order; Tier 3 if any product statement; Amazon-itself = Tier 2 |
+| `POL-MEDICAL` | Medical claims | "cured my eczema/insomnia…" | Tier 2 |
+| `POL-REPETITIVE` | Repetitive text, spam, or pictures created with symbols | symbols only, repeated words, keyboard-mash gibberish | Tier 1 |
+| `POL-LANGUAGE` | Content written in unsupported languages | stopword language detection vs `SUPPORTED_LANGS` (US en/es stated by Amazon; CA en/fr, MX es/en, BR pt still to confirm); mixed-language = Tier 2 | Tier 1 / Tier 2 |
+| `POL-PLAGIARISM` | Plagiarism, infringement, or impersonation | same ≥40-character text on another ASIN | Tier 2 |
+| `POL-HATE`, `POL-SEXUAL`, `POL-ILLEGAL` | Hate speech; Sexual content; Illegal activities | no automatic detector; add detection keywords on the Policies page | Tier 2 via keywords |
+| any | manual keywords | the policy's `keywords` | Tier 2 |
 
 6. **Verdict rules (SOP v1.0).** The review minus the matched phrase is checked for product statements (`PRODUCT_TALK`, which includes materials such as silk, satin and microfiber):
    - any product statement → **Tier 3** (purity gate; not applied to language, spam or plagiarism);
@@ -111,35 +111,42 @@ Default verdict is **NOT ELIGIBLE**. Text = `title + "
 
 **Not removable per Seller Central (never flag):** reviews comparing our product with a competitor's ("Can Amazon remove a review that compares my product with a competitor's product…? No.").
 
-**Calibration (21 Sep 2026):** two independent reviewers judged every flagged review against the PDF, and four more read all 735 unflagged negative reviews. The shipped rules match at least one reviewer on 27 of 30 flagged reviews; the other 3 differ in the cautious direction (HOLD where reviewers said not eligible). They also catch 8 of the 10 strong misses the reviewers found. **Do not loosen the rules without re-running this baseline.**
+**Calibration (21 Sep 2026):** two independent reviewers judged every flagged review against the PDF, and four more read all 735 unflagged negative reviews. The shipped rules match at least one reviewer on 27 of 30 flagged reviews; the other 3 differ in the cautious direction (Tier 2 where reviewers said not eligible). They also catch 8 of the 10 strong misses the reviewers found. **Do not loosen the rules without re-running this baseline.**
 
 ### 2.4 Human validation
 Five checks are required, plus the validator's name: source confirmed, exact quote present, live policy checked, not product-experience only, exclusions considered. Only `clear_violation` or `hold` can be validated.
+- Approving with a complete checklist saves the validation automatically; approving with an incomplete one records nothing and says exactly what is missing.
+- Once saved, the checklist is read-only.
+- Re-running analysis keeps validation and approvals when the verdict, policy and evidence are unchanged. If any of them change, they are cleared and the audit log says why. A review that already has a case is never re-analysed.
 
 ### 2.5 Approvals
 - AB and Brand Manager each record `{by, at, decision, notes}`. Either can reject.
 - **They must be different people.** Enforce this by user account in the Command Center.
 - Each approver's notes stay hidden from the other until both have decided.
 - Both approvals → `approved`. The ASIN must also be on the **weekly approved-for-filing list**, if that list is non-empty (parent or child match).
+- A rejection by either approver closes the review (`rejected`, shown as "Rejected · not filed"); its notes are logged at once because the decision is final. Decisions are locked once a case exists.
+- While `tier2PerWeek` is 0 (Phase 1), a Tier 2 review is **held for a person**: no checklist, approvals or case, and the dashboard counts only Tier 1 as work to validate.
 
 ### 2.6 Case draft (`caseDraft`)
-Built only from stored facts. 150 words maximum (save refused above that). The evidence quote is locked (save refused if it's removed).
+SOP section 8 five-part filing, built only from stored facts. 150 words maximum (save refused above that). The quoted review text is stored on the case (`lockedQuote`) and cannot be edited out.
 ```
-ASIN / Marketplace / Review ID / Review link
-Community Guidelines category: <heading>
-Guideline basis: <policy.caseStatement with {bullet} = the exact sub-bullet>   (Amazon's verbatim wording)
-Seller Central policy: <policy.url>          (primary reference: Customer product reviews policies, GYRKB5RU3FS5TURN)
-Community Guidelines: <policy.guidelineUrl>
-Text in the review: "<evidence>"
-We request that Amazon review this content against the Community Guidelines and
-remove it if it does not comply.
+ASIN / Product / Review title / Reviewer / Review date / Review URL / Order ID (only when known)
+
+Guideline section: <Community Guidelines heading>
+
+The review states in full: "<review text>"      ("The review states:" + the sentence, for long reviews)
+
+<one tie sentence in Amazon's words, naming the sub-bullet>
+
+We request removal of this review under the cited guideline.
 ```
-The route is a constant: `Amazon Brand Registry > Report a Violation > Other Issues` (not editable).
+Missing identifiers are shown as `[name as displayed]`, `[direct link]` or `[product name]`; **Mark submitted is refused until they are replaced.** The Seller Central and Community Guidelines links are shown to the validator, not placed in the filing. The route is a constant: `Amazon Brand Registry > Report a Violation > Other Issues` (not editable).
 
 ### 2.7 Submission, monitoring, close
-- **Mark submitted** requires a named submitter. It is blocked if submissions are paused, the ASIN isn't on the approved list, or the **weekly cap** is reached. The cap counts cases by `recordedAt` (server time), never by the typed date, over a rolling 7 days.
-- `nextReviewAt = submittedAt + observationDays (10)`.
-- **Follow-ups:** capped at `followUpMax`. Any follow-up after the first requires the latest Amazon response to be `insufficient_info`.
+- **Mark submitted** requires status `ready`, both approvals and a named submitter. It is blocked if submissions are paused, the review is in the control set or already removed, it fails screening again, the ASIN isn't on the approved list, any `[bracketed]` identifier remains, or a cadence limit is hit: the **weekly cap** (3), **48 h** since the last filing on the same ASIN, or **2 per ASIN per 30 days**. Limits count by `recordedAt` (server time), never by the typed date, and refiles count too.
+- `nextReviewAt = submittedAt + observationDays (21)`.
+- **Refile:** at most `followUpMax` (1) per case, only after the 21-day window with no removal, and never after a decline. Stored in `refiles[]`.
+- Only `ready` cases can be deleted (the review returns to `approved`). Closed cases are read-only.
 - **Amazon response:** `pending | insufficient_info | declined | removed`. A case can only be closed as `removed` or `declined`, with an outcome note.
 
 ### 2.8 Priority, success rate, auto-pause
@@ -156,16 +163,16 @@ The route is a constant: `Amazon Brand Registry > Report a Violation > Other Iss
 
 | Table | Fields |
 |---|---|
-| `reviews` | id, reviewId (Amazon), sourceRef, asin, brand, marketplace, rating, title, text, reviewDate, reviewer, collectedAt, sourceRemoved, workflow_state (`new/screened/blocked/routed/validated/approved/drafted`), verdict, block_reason, block_detail, classification{policyId, category, confidence, evidence, rationale, at}, validation{5 checks, notes, by, at}, approvals{ab, brandManager: {by, at, decision, notes}}, updatedAt |
-| `cases` | id, reviewId (FK), status (`ready/submitted/monitoring/closed`), draft, route, submitter, amazonReference, submittedAt, **recordedAt**, nextReviewAt, followUpCount, amazonResponse, outcome, closedAt, createdAt, updatedAt |
+| `reviews` | id, reviewId (Amazon), sourceRef, asin, parent, orderId, brand, marketplace, rating, title, text, reviewDate, reviewer, collectedAt, sourceRemoved, removedAt, control, workflow_state (`new/screened/blocked/routed/validated/approved/rejected/drafted`; shown as New, To validate, Blocked, No action, Validated, Approved, Rejected, Case drafted), verdict, block_reason, block_detail, classification{policyId, category, confidence, evidence, rationale, at}, validation{5 checks, notes, by, at}, approvals{ab, brandManager: {by, at, decision, notes}}, updatedAt |
+| `cases` | id, reviewId (FK), tier, status (`ready/submitted/monitoring/closed`), draft, **lockedQuote**, route, submitter, amazonReference, submittedAt, **recordedAt**, nextReviewAt, followUpCount, **refiles[]**, amazonResponse, outcome, closedAt, createdAt, updatedAt |
 | `policies` | id, heading, marketplaces[], guidance, **caseStatement**, url (Seller Central policy link, primary), **guidelineUrl** (Community Guidelines), **keywords[]**, exclusions, **exclusionKeywords[]**, lastChecked, owner, status, route (constant) |
 | `protected_asins` | asin, parent, brand, marketplace (`US/CA/MX/BR/ALL`), reason, owner, protectedFrom, releaseDate, status, lastChecked |
 | `asin_catalog` | brand, parent, child, sku, marketplace, productName. Source: Master File SKU LIST (brand taken from the product-name prefix) |
 | `owners` | role (AB / Brand Manager / Submitter), name, brands[], marketplaces[] → map to user accounts |
-| `settings` | weeklyCap, observationDays, followUpMax, stalenessDays (30), marketplaces[], approvedAsins[], approvedWeekOf, precisionFloor (40), submissionsPaused, pauseReason, notificationChannel |
+| `settings` | weeklyCap (3), observationDays (21), followUpMax (1), stalenessDays (30), marketplaces[], approvedAsins[], approvedWeekOf, precisionFloor (40), asinSpacingHours (48), asinMonthlyMax (2), tier2PerWeek (0), canadaExclusion (on), autoSyncMondays, submissionsPaused, pauseReason, notificationChannel |
 | `audit_log` | id, at, entityType, entityId, event, actor, before, after, comment. **Append-only. No delete path** (the reference app's "factory reset" must not exist in production) |
 
-Seed data (8 Community Guidelines policies with `caseStatement` wording, 3 SLEEPHORIA protected ASINs, owners) is at the top of the `<script>` in `index.html`.
+Seed data (15 policies: the 14 Community Guidelines sections plus the SOP's "Review of a different product", each with Amazon's verbatim wording; 3 SLEEPHORIA protected ASINs; owners) is at the top of the `<script>` in `index.html`.
 
 ---
 
@@ -182,7 +189,7 @@ Seed data (8 Community Guidelines policies with `caseStatement` wording, 3 SLEEP
 
 Read it with a service account, not the public link.
 
-**Full-history scan (reference app):** `scanFullHistory()` reads every row of every review tab, analyses 1–3★ reviews in memory and keeps only CLEAR/HOLD candidates, because browser storage can't hold the ~5,000-review history. Once the Command Center has a database, store every review and run the classifier over all of them. Keep the rule that non-candidates never show validation or approval controls.
+**Full-history scan (reference app):** `scanFullHistory()` reads every row of every review tab, analyses 1–3★ reviews in memory and keeps only Tier 1 and Tier 2 reviews, so each person's queue stays focused. Once the Command Center has a database, store every review and run the classifier over all of them. Keep the rule that non-candidates never show validation or approval controls.
 
 ---
 
@@ -192,14 +199,14 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (91) to the Command Center test suite.
-2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★; with the Canada exclusion and the SOP purity gate: 522 blocked `CANADA_REVIEWS` (376 ASINs/parents), 3 Tier 1, 2 Tier 2, 236 Tier 3, 2 `NO_MARKETPLACE_MATCH` (US only)**. Differences mean the rules drifted.
+1. Port `qa/regression.js` scenarios (97) to the Command Center test suite.
+2. **Baseline:** a full Master File run on 22 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★; with the Canada exclusion and the SOP purity gate: 516 blocked `CANADA_REVIEWS` (376 ASINs/parents), 6 blocked `PROTECTED_ASIN` (children of a protected SLEEPHORIA parent), 3 Tier 1, 3 Tier 2, 235 Tier 3, 2 `NO_MARKETPLACE_MATCH` (US only)**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
 ## 7. Reporting route
 The route stays **Brand Registry → Report a Violation → Other Issues** (Erik's instruction). Per SOP v1.0: the **"Report"** link under the review is the secondary channel, and the **Report Review Compensation form** is for compensation cases. **community-help@amazon.com is retired** (an Amazon moderator confirmed in 2026), even though an older Seller Central page still lists it. Seller Central → Report Abuse is for attacks by competitors.
 
 ## 8. Open items
-- Erik to confirm the notification channel, weekly cap (proposed 5/week), follow-up cap (proposed 2) and Protected ASIN additions.
+- Erik to confirm the notification channel and any Protected ASIN additions. Cadence follows SOP v1.0 Phase 1 (3/week, 48 h per ASIN, 2 per ASIN per 30 days, one refile).
 - Confirm the extraction engine is running (moving from Ayush's laptop to the Mac mini, PR #149) and exposes review ID + link.
 - Phase 1 scope: DECOLURE bamboo lines, US only, via the approved-for-filing list.

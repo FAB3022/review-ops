@@ -1,18 +1,20 @@
-// Regression checks for index.html (v5.2, aligned to Final Proposal v2.2). Run: npm i playwright-core && node qa/regression.js index.html
+// Regression checks for index.html (v5.2, aligned to SOP v1.0 and Final Proposal v2.7). Run: npm i playwright-core && node qa/regression.js index.html
 // Uses local Chrome and pulls the live Master File tabs for the sync checks.
 const {chromium}=require('playwright-core');const http=require('http'),fs=require('fs');
 const html=fs.readFileSync(process.argv[2]);
 const srv=http.createServer((q,r)=>{r.writeHead(200,{'content-type':'text/html'});r.end(html)}).listen(8767);
 let pass=0,fail=0;const ok=(c,m)=>{c?pass++:fail++;console.log((c?'PASS ':'FAIL ')+m)};
 (async()=>{const b=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
-const p=await b.newPage();const errs=[];p.on('dialog',d=>d.accept('Erik'));p.setDefaultTimeout(60000);p.on('pageerror',e=>errs.push(e.message));
+const p=await b.newPage();await p.addInitScript(()=>{window.fillIds=()=>{const a=document.querySelector('#caseDraftArea');if(a)a.value=a.value.replace(/\[name as displayed\]/g,'Test Buyer').replace(/\[direct link\]/g,'https://www.amazon.com/gp/customer-reviews/RTEST00001').replace(/\[product name\]/g,'Test product')}});const errs=[];p.on('dialog',d=>d.accept('Erik'));p.setDefaultTimeout(60000);p.on('pageerror',e=>errs.push(e.message));
 // migration from a v5.0 browser state
-await p.goto('http://localhost:8767/');await p.evaluate(()=>{const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')||state;s.policies.forEach(x=>{x.route='Seller Central > Help > Report abuse';delete x.exclusionKeywords});s.settings.scriptVersion='v5.0';localStorage.setItem(STORAGE_KEY,JSON.stringify(s))});
-await p.reload();await p.waitForTimeout(800);
+// (old browsers kept a v5.0 copy in localStorage; first load moves it into IndexedDB and upgrades it)
+await p.goto('http://localhost:8767/');await p.evaluate(()=>window.appReady);await p.evaluate(async()=>{const s=structuredClone(state);s.policies.forEach(x=>{x.route='Seller Central > Help > Report abuse';delete x.exclusionKeywords});s.settings.scriptVersion='v5.0';await idbClear();localStorage.setItem(STORAGE_KEY,JSON.stringify(s))});
+await p.reload();await p.evaluate(()=>window.appReady);await p.waitForTimeout(300);
+const movedToIdb=await p.evaluate(async()=>({ls:localStorage.getItem(STORAGE_KEY),idb:!!(await idbGet())}));ok(movedToIdb.ls===null&&movedToIdb.idb,'old localStorage copy moved into the browser database (no 5 MB limit)');
 const mig=await p.evaluate(()=>({routes:[...new Set(state.policies.map(x=>x.route))],ex:state.policies.every(x=>Array.isArray(x.exclusionKeywords)),v:state.settings.scriptVersion}));
 ok(mig.routes.length===1&&mig.routes[0].startsWith('Amazon Brand Registry'),'migration locks route: '+mig.routes);ok(mig.ex,'migration adds exclusion keywords');ok(mig.v==='v5.2','version v5.2');
 // fresh state
-await p.evaluate(()=>localStorage.clear());await p.reload();await p.waitForTimeout(800);
+await p.evaluate(async()=>{localStorage.clear();await idbClear()});await p.reload();await p.evaluate(()=>window.appReady);await p.waitForTimeout(300);
 ok(await p.evaluate(()=>JSON.stringify(state.settings.marketplaces))==='["US"]','fresh default marketplaces US only');
 console.log('syncing');const sync=await p.evaluate(async()=>{const r={};for(const c of state.sheetSyncs)r[c.id]=await runSheetSync(c,true);return r});
 console.log(JSON.stringify(sync));
@@ -51,8 +53,8 @@ const ap=await p.evaluate(()=>{state.policies.forEach(x=>x.lastChecked=today());
  return {hidden,blocked,shown,state:r.workflow_state}});
 ok(ap.hidden,'AB notes hidden before BM decides');ok(ap.blocked,'same name for AB and BM refused');ok(ap.shown&&ap.state==='approved','notes shown after both, approved');
 // cap uses recorded time, route locked
-const cap=await p.evaluate(()=>{state.cases=[];state.settings.weeklyCap=1;const r=state.reviews.at(-1);generateCase(r);const c=state.cases[0];$('#caseSubmitter').value='AB';$('#submittedAt').value='2020-01-01';markSubmitted(c);
- const r2={...r,id:nextReviewId(),reviewId:''};state.reviews.push(r2);generateCase(r2);const c2=state.cases.find(x=>x.reviewId===r2.id);$('#caseSubmitter').value='AB';markSubmitted(c2);
+const cap=await p.evaluate(()=>{state.cases=[];state.settings.weeklyCap=1;const r=state.reviews.at(-1);generateCase(r);const c=state.cases[0];$('#caseSubmitter').value='AB';$('#submittedAt').value='2020-01-01';(fillIds(),markSubmitted)(c);
+ const r2={...r,id:nextReviewId(),reviewId:''};state.reviews.push(r2);generateCase(r2);const c2=state.cases.find(x=>x.reviewId===r2.id);$('#caseSubmitter').value='AB';(fillIds(),markSubmitted)(c2);
  return {c1:c.status,route:c.route,ro:$('#caseRoute').readOnly,c2:c2.status}});
 ok(cap.c1==='submitted'&&cap.c2==='ready','backdated submission still counts toward weekly cap');ok(cap.route.startsWith('Amazon Brand Registry')&&cap.ro,'case route locked');
 // v5.2 alignment: §6.1 approved list, §6.2 priority, §6.3 success rate + auto-pause, §2 follow-up rule
@@ -61,9 +63,9 @@ const al=await p.evaluate(()=>{const out={};state.cases=[];state.settings.weekly
  state.settings.approvedAsins=['B0OTHERASN'];const r=mk({});r.validation={at:now()};r.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(r);out.blockedByList=!caseForReview(r.id);out.nextStep=reviewNextStep(r);
  state.settings.approvedAsins=[];generateCase(r);out.allowedWhenEmpty=Boolean(caseForReview(r.id));
  const old=mk({reviewDate:'2026-06-01',rating:3});out.prioNew=priorityScore(r);out.prioOld=priorityScore(old);out.prioIneligible=priorityScore(mk({text:'The fabric feels cheap.'}));
- const c=caseForReview(r.id);openCase(c.id);$('#caseSubmitter').value='AB';markSubmitted(c);out.submitted=c.status;
+ const c=caseForReview(r.id);openCase(c.id);$('#caseSubmitter').value='AB';(fillIds(),markSubmitted)(c);out.submitted=c.status;
  openCase(c.id);$('#amazonResponse').value='pending';recordFollowUp(c);out.fuTooSoon=c.followUpCount;
- c.submittedAt=addDays(today(),-22);openCase(c.id);$('#amazonResponse').value='declined';recordFollowUp(c);out.fuDeclined=c.followUpCount;
+ c.submittedAt=addDays(today(),-22);c.recordedAt=new Date(Date.now()-22*864e5).toISOString();openCase(c.id);$('#amazonResponse').value='declined';recordFollowUp(c);out.fuDeclined=c.followUpCount;
  openCase(c.id);$('#amazonResponse').value='pending';recordFollowUp(c);out.fuAllowed=c.followUpCount;
  openCase(c.id);$('#amazonResponse').value='pending';recordFollowUp(c);out.fuCapped=c.followUpCount;
  openCase(c.id);$('#caseOutcome').value='done';$('#amazonResponse').value='pending';closeCaseRecord(c);out.closeNeedsResponse=c.status;
@@ -73,7 +75,7 @@ const al=await p.evaluate(()=>{const out={};state.cases=[];state.settings.weekly
  const d=n=>new Date(Date.now()-n*86400000).toISOString();
  state.cases.push({id:'W1',reviewId:r.id,status:'closed',amazonResponse:'declined',closedAt:d(2),updatedAt:now()},{id:'W1b',reviewId:r.id,status:'closed',amazonResponse:'declined',closedAt:d(3),updatedAt:now()},{id:'W2',reviewId:r.id,status:'closed',amazonResponse:'declined',closedAt:d(9),updatedAt:now()});
  checkStopConditions();out.pausedPrecision=state.settings.submissionsPaused+' '+state.settings.pauseReason;
- const r2=mk({});r2.validation={at:now()};r2.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(r2);const c2=caseForReview(r2.id);openCase(c2.id);$('#caseSubmitter').value='AB';markSubmitted(c2);out.blockedWhilePaused=c2.status;
+ const r2=mk({});r2.validation={at:now()};r2.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(r2);const c2=caseForReview(r2.id);openCase(c2.id);$('#caseSubmitter').value='AB';(fillIds(),markSubmitted)(c2);out.blockedWhilePaused=c2.status;
  // protected breach
  state.settings.submissionsPaused=false;state.cases=state.cases.filter(x=>!x.id.startsWith('W'));state.protectedAsins.push({asin:'B0TESTTEST',parent:'B0TESTTEST',marketplace:'US',status:'active',reason:'test'});checkStopConditions();out.pausedBreach=state.settings.submissionsPaused+' '+state.settings.pauseReason;
  saveState();navigate('settings');out.resumeBtn=Boolean($('#resumeSubmissionsBtn'));navigate('reviews');out.sortSel=Boolean($('#reviewSort'));
@@ -270,22 +272,22 @@ const sop=await p.evaluate(()=>{state.policies.forEach(x=>x.lastChecked=today())
  const canadaFamily=r.block_reason;
  state.canadaAsins=state.canadaAsins.filter(x=>x!=='B0WPPARENT');analyzeReview(r);const afterRemoval=r.verdict;
  // cadence: two Tier 1 cases on the same ASIN inside 48 hours
- state.cases=[];const mkc=()=>{const x={id:nextReviewId(),asin:'B0CADENCE1',brand:'DECOLURE',marketplace:'US',rating:1,title:'Missing',text:'Missing a pillow case from the order '+Math.random(),reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{at:now()},approvals:{ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}}};state.reviews.push(x);analyzeReview(x);x.validation={at:now()};x.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(x);const c=caseForReview(x.id);openCase(c.id);$('#caseSubmitter').value='AB';markSubmitted(c);return c.status};
+ state.cases=[];const mkc=()=>{const x={id:nextReviewId(),asin:'B0CADENCE1',brand:'DECOLURE',marketplace:'US',rating:1,title:'Missing',text:'Missing a pillow case from the order '+Math.random(),reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{at:now()},approvals:{ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}}};state.reviews.push(x);analyzeReview(x);x.validation={at:now()};x.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(x);const c=caseForReview(x.id);openCase(c.id);$('#caseSubmitter').value='AB';(fillIds(),markSubmitted)(c);return c.status};
  const first=mkc(),second=mkc();
  // tier 2 not filed in phase 1
- const h={id:nextReviewId(),asin:'B0TIER2XX1',brand:'DECOLURE',marketplace:'US',rating:1,title:'t',text:'This company is a scam.',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(h);analyzeReview(h);h.validation={at:now()};h.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(h);const hc=caseForReview(h.id);openCase(hc.id);$('#caseSubmitter').value='AB';markSubmitted(hc);
+ const h={id:nextReviewId(),asin:'B0TIER2XX1',brand:'DECOLURE',marketplace:'US',rating:1,title:'t',text:'This company is a scam.',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(h);analyzeReview(h);h.validation={at:now()};h.approvals={ab:{by:'A',decision:'approve'},brandManager:{by:'B',decision:'approve'}};generateCase(h);const hc=caseForReview(h.id);
  // control set + learning card
  const t1={id:nextReviewId(),asin:'B0CONTROL1',brand:'DECOLURE',marketplace:'US',rating:1,title:'Used',text:'Used item came to me',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(t1);analyzeReview(t1);
  setControl(t1,true);markRemovedOnAmazon(t1);saveState();navigate('dashboard');
  const card=$('#learningCard')?.innerHTML||'';
- return {wrong,refunded,langMixed,canadaFamily,afterRemoval,first,second,tier2:hc.status,controlRate:/Control-set removal rate<\/span><b>100%/.test(card),card:!!card,tierRate:/SOP expects 4–8%/.test(card)}});
+ return {wrong,refunded,langMixed,canadaFamily,afterRemoval,first,second,tier2:hc?hc.status:'no case',controlRate:/Control-set removal rate<\/span><b>100%/.test(card),card:!!card,tierRate:/SOP expects 4–8%/.test(card)}});
 console.log(JSON.stringify(sop));
 ok(sop.wrong==='hold:POL-WRONGPRODUCT','review of a different product (bed frame on a fitted sheet) → Tier 2 (SOP Example 3)');
 ok(sop.refunded.startsWith('not_eligible'),'SOP disqualifier: refund or replacement from us → never file');
 ok(sop.langMixed==='clear_violation:POL-LANGUAGE','mixed-language review → Tier 1 (SOP)');
 ok(sop.canadaFamily==='CANADA_REVIEWS'&&sop.afterRemoval==='clear_violation','Canada exclusion covers the whole parent family; lifts when the family has no Canadian reviews');
 ok(sop.first==='submitted'&&sop.second==='ready','SOP spacing: a second filing on the same ASIN inside 48 hours is blocked');
-ok(sop.tier2==='ready','SOP Phase 1: Tier 2 cases are not filed');
+ok(sop.tier2==='no case','SOP Phase 1: no case can be generated for a Tier 2 review');
 ok(sop.card&&sop.controlRate&&sop.tierRate,'Learning and trends card: control-set removal rate and Tier 1 rate vs SOP 4–8%');
 // MajestIQ conditions from SOP 4.3 not previously detected: steering to a competing brand, threats
 const mq=await p.evaluate(()=>{const run=(text)=>{const c=classifyReview({id:'M'+text.length,asin:'B0MQ',rating:1,title:'',text,marketplace:'US'});return c.verdict+':'+(c.policyId||'-')};
@@ -293,5 +295,32 @@ const mq=await p.evaluate(()=>{const run=(text)=>{const c=classifyReview({id:'M'
 console.log(JSON.stringify(mq));
 ok(mq.steer==='hold:POL-PROMO'&&mq.comparison.startsWith('not_eligible'),'explicit steering to a competing brand → Tier 2; plain comparison → Tier 3');
 ok(mq.threat==='hold:POL-PROFANITY'&&mq.sue.startsWith('not_eligible'),'threat → Tier 2 (Harassment or threats); "I will sue" is not a threat');
+// QA round 1 (22 Sep): storage beyond 5 MB, approval flow, rating-first, routing labels
+const qa1=await p.evaluate(async()=>{state.policies.forEach(x=>x.lastChecked=today());state.settings.marketplaces=['US','CA'];
+ // 1. store well over 5 MB and read it back
+ const big='x'.repeat(2000);const extra=[];for(let i=0;i<4000;i++)extra.push({id:'BIG'+i,asin:'B0BIG',brand:'DECOLURE',marketplace:'US',rating:5,title:'t',text:big,reviewDate:today(),updatedAt:now()});
+ state.reviews.push(...extra);saveState();await saveChain;const back=await idbGet();const bigOk=back.reviews.length>=4000&&JSON.stringify(back).length>7000000&&!saveError;
+ state.reviews=state.reviews.filter(r=>!r.id.startsWith('BIG'));saveState();await saveChain;
+ // 2. 5★ review is "not a target", never blocked
+ const five={id:nextReviewId(),asin:'B0CA5STAR',brand:'DECOLURE',marketplace:'CA',rating:5,title:'Great',text:'Love them.',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(five);analyzeReview(five);
+ // 3. approval before validation is saved: buttons disabled; ticking the checklist then approving auto-saves validation
+ const r={id:nextReviewId(),asin:'B0APPROVE1',brand:'DECOLURE',marketplace:'US',rating:1,title:'Missing',text:'Missing a pillow case from the order.',reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};
+ state.canadaAsins=(state.canadaAsins||[]).filter(x=>x!=='B0APPROVE1');state.reviews.push(r);analyzeReview(r);saveState();openReview(r.id);
+ let lastToast='';const _t=toast;toast=m=>{lastToast=m;_t(m)};recordApproval(r,'ab','approve');const disabledBefore=!r.approvals?.ab&&!r.validation?.at&&/Finish Human validation first/.test(lastToast);toast=_t;openReview(r.id);
+ ['vSource','vQuote','vPolicy','vProduct','vExclusion'].forEach(id=>$('#'+id).checked=true);$('#validatorName').value='AB';
+ recordApproval(r,'ab','approve');const abAfter=r.approvals.ab?.decision,valSaved=!!r.validation.at;
+ openReview(r.id);const enabledAfter=!$('#approveBM').disabled;$('#bmApproverName').value='Umer Shahid';recordApproval(r,'brandManager','approve');
+ return {bigOk,five:five.workflow_state+'|'+five.verdict+'|'+customerRoute(five).label,disabledBefore,abAfter,valSaved,enabledAfter,state:r.workflow_state,route:customerRoute(r).label}});
+console.log(JSON.stringify(qa1));
+ok(qa1.bigOk,'browser database holds more than 7 MB (the old 5 MB limit is gone)');
+ok(qa1.five==='routed|not_eligible|Positive review · no action','4–5★ review is "Positive review · no action", never blocked (SOP Gate 1)');
+ok(qa1.disabledBefore&&qa1.abAfter==='approve'&&qa1.valSaved&&qa1.enabledAfter&&qa1.state==='approved','Approve with an incomplete checklist records nothing and says what is missing; a completed checklist is saved automatically on approve');
+ok(qa1.route==='Tier 1 · removal case','routing label uses Tier wording');
+// real clicks: typing the validator name then clicking Save validation must save (the footer is not redrawn under the click)
+{const rid=await p.evaluate(()=>{const r={id:nextReviewId(),reviewId:'RCLICK001',asin:'B0CLICK001',brand:'DECOLURE',marketplace:'US',rating:1,title:'Contact',text:'Write to me at click.test@example.com please.',reviewDate:today(),collectedAt:now(),workflow_state:'new',verdict:'',classification:null,validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(r);analyzeReview(r,'user');saveState();navigate('reviews');openReview(r.id);return r.id});
+ for(const x of ['vSource','vQuote','vPolicy','vProduct','vExclusion'])await p.check('#'+x);
+ await p.fill('#validatorName','Click Tester');await p.click('#saveValidation');await p.waitForTimeout(200);
+ ok(await p.evaluate(id=>!!state.reviews.find(x=>x.id===id).validation?.at,rid),'typing the validator name then clicking Save validation saves it (click not lost)');
+ await p.evaluate(()=>closeDrawer&&closeDrawer())}
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
