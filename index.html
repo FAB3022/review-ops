@@ -78,8 +78,10 @@ main{min-width:0}.topbar{height:76px;position:sticky;top:0;z-index:30;background
               <input id="reviewSearch" type="search" placeholder="Search text, ASIN, brand, ID…">
               <select id="reviewStatusFilter"><option value="all">All workflow states</option><option value="new">New</option><option value="screened">Screened</option><option value="blocked">Blocked</option><option value="routed">Routed (non-removal)</option><option value="validated">Validated</option><option value="approved">Approved</option><option value="drafted">Drafted</option></select>
               <select id="reviewVerdictFilter"><option value="all">All verdicts</option><option value="clear_violation">CLEAR POLICY VIOLATION</option><option value="hold">HOLD</option><option value="not_eligible">NOT ELIGIBLE</option><option value="unclassified">Unclassified</option></select>
-              <select id="reviewSort"><option value="priority">Priority first</option><option value="updated">Recently updated</option></select>
+              <select id="reviewSort"><option value="priority">Priority first</option><option value="rating">Lowest rating first</option><option value="updated">Recently updated</option></select>
+              <select id="reviewRatingFilter" title="Filter by star rating"><option value="all">All ratings</option><option value="neg">1–3★ (negative)</option><option value="1">1★</option><option value="2">2★</option><option value="3">3★</option><option value="4">4★</option><option value="5">5★</option><option value="pos">4–5★ (positive)</option></select>
               <select id="reviewBrandFilter"><option value="all">All brands</option></select>
+              <select id="reviewProductFilter" title="Filter by product (from the SKU LIST / ASIN catalogue)"><option value="all">All products</option></select>
               <select id="reviewMarketplaceFilter"><option value="all">All marketplaces</option></select>
             </div>
             <div class="toolbar-actions">
@@ -444,7 +446,7 @@ const DETECTORS=[
   {policy:'POL-SELLER',bullet:'Shipping packaging',confidence:82,mixed:true,onlyFocus:true,why:'About the shipping packaging.',test:t=>t.match(/box was crushed|packaging was damaged|(?:box|package|packaging) (?:was|arrived|came) (?:damaged|crushed|open|opened|torn|ripped|wet|broken)|open(?:ed)? packag\w* (?:and )?no box|broken box/i)},
   {policy:'POL-SELLER',bullet:'Product condition and damage',confidence:72,mixed:true,onlyFocus:true,why:'Defect visible on arrival — may be a manufacturing issue, so always HOLD.',test:t=>t.match(/(?:out of|opened) the (?:package|box|bag)[^.!?]{0,50}(?:holes?|stains?|stained|tears?|torn|ripped|spots?|discolou?r\w*|damage\w*)|(?:came|arrived) (?:ripped|torn|stained|dirty|damaged|with (?:a |weird |large |huge )?(?:\w+ )?(?:stains?|holes?|tears?|rips?|hair|dirt))|(?:delivered|arrived) today[^.!?]{0,100}(?:hole|tear|rip|stain)|arriv[ée]e?s? (?:tach[ée]e?s?|d[ée]chir[ée]e?s?|ab[iî]m[ée]e?s?)/i)},
   {policy:'POL-SELLER',bullet:'Ordering issues and returns',confidence:82,mixed:true,onlyFocus:true,why:'Items missing from the order.',test:t=>t.match(/missing (?:a |one |two |the |\d )?(?:pillow ?cases?|pieces?|items?|parts?|sheets?|fitted sheet|flat sheet)|no pillow ?cases? in the box|(?:didn'?t|did not|never) (?:receive|get) (?:the |my |any )?pillow ?cases?|(?:only|just) (?:received|got) (?:one|1|two|2|three|3|half)|my (?:two|2|missing) (?:missing )?pillow ?cases|\b(?:\d|one|two|three) (?:pillow ?cases?|pieces?) not (?:\d|two|three|four)|\d pictured[^.!?]{0,10}received \d/i)},
-  {policy:'POL-SELLER',bullet:'Shipping cost and speed',confidence:82,mixed:true,onlyFocus:true,why:'About delivery speed or shipping cost.',test:t=>t.match(/arrived late|(?:delivery|shipping) was (?:slow|late|delayed|expensive|terrible)|took (?:\w+ )?(?:weeks|forever) to (?:arrive|ship|come|deliver)|(?:did|do)n'?t (?:send|arrive|deliver)[^.!?]{0,20}on time|package was lost|had to be re-?shipped|delivered to the wrong|(?:ups|fedex|usps|canada post|purolator|delivery driver) (?:lost|left|damaged|threw|delivered)|shipping (?:cost|fee|charge)s? (?:was|were|is|are) (?:too )?(?:high|expensive|ridiculous)/i)},
+  {policy:'POL-SELLER',bullet:'Shipping cost and speed',confidence:82,mixed:true,onlyFocus:true,why:'About delivery speed or shipping cost.',test:t=>t.match(/arrived (?:[\w-]+ ){0,3}late|(?:came|was delivered) (?:[\w-]+ ){0,3}late|(?:delivery|shipping) was (?:slow|late|delayed|expensive|terrible)|took (?:\w+ )?(?:weeks|forever) to (?:arrive|ship|come|deliver)|(?:did|do)n'?t (?:send|arrive|deliver)[^.!?]{0,20}on time|package was lost|had to be re-?shipped|delivered to the wrong|(?:ups|fedex|usps|canada post|purolator|delivery driver) (?:lost|left|damaged|threw|delivered)|shipping (?:cost|fee|charge)s? (?:was|were|is|are) (?:too )?(?:high|expensive|ridiculous)/i)},
   /* Medical claims */
   {policy:'POL-MEDICAL',bullet:'',confidence:70,mixed:true,why:'Claim about preventing or curing a medical condition.',test:t=>t.match(/(?:cured?s?|cured|heal(?:ed|s)?|prevent(?:s|ed)?|got rid of|eliminated) (?:my |the |her |his |our )?(?:insomnia|eczema|psoriasis|arthritis|acne|allergies|asthma|cancer|diabetes|depression|anxiety|fibromyalgia|night sweats|hot flashes|migraines?|sleep apnea|rash(?:es)?|dermatitis|rosacea)/i)},
   /* Repetitive text, spam, or pictures created with symbols */
@@ -650,9 +652,15 @@ function renderReviews(){
   const wf=$('#reviewStatusFilter')?.value||'all';
   const vd=$('#reviewVerdictFilter')?.value||'all';
   const brand=$('#reviewBrandFilter')?.value||'all';
+  const rating=$('#reviewRatingFilter')?.value||'all';
+  const prod=$('#reviewProductFilter')?.value||'all';
+  const pidx=productIndex();
   const mp=$('#reviewMarketplaceFilter')?.value||'all';
 
   const brands=brandsInUse();const cb=$('#reviewBrandFilter').value;$('#reviewBrandFilter').innerHTML='<option value="all">All brands</option>'+brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');if(brands.includes(cb))$('#reviewBrandFilter').value=cb;
+  const pc={};state.reviews.forEach(r=>{if(brand!=='all'&&r.brand!==brand)return;const k=productLabel(r,pidx);pc[k]=(pc[k]||0)+1});
+  const pnames=Object.keys(pc).sort((a,b)=>a==='Unmapped ASIN'?1:b==='Unmapped ASIN'?-1:a.localeCompare(b));
+  $('#reviewProductFilter').innerHTML='<option value="all">All products</option>'+pnames.map(n=>`<option value="${esc(n)}">${esc(n)} (${pc[n]})</option>`).join('');if(pnames.includes(prod))$('#reviewProductFilter').value=prod;
   const cmp=$('#reviewMarketplaceFilter').value;$('#reviewMarketplaceFilter').innerHTML='<option value="all">All marketplaces</option>'+state.settings.marketplaces.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');if(state.settings.marketplaces.includes(cmp))$('#reviewMarketplaceFilter').value=cmp;
 
   const list=state.reviews.filter(r=>{
@@ -660,13 +668,17 @@ function renderReviews(){
     if(vd!=='all'){if(vd==='unclassified'&&(r.verdict||r.workflow_state==='blocked'))return false;if(vd!=='unclassified'&&r.verdict!==vd)return false}
     if(brand!=='all'&&r.brand!==brand)return false;
     if(mp!=='all'&&r.marketplace!==mp)return false;
+    if(rating==='neg'&&!(Number(r.rating)<=3))return false;
+    if(rating==='pos'&&!(Number(r.rating)>=4))return false;
+    if(/^[1-5]$/.test(rating)&&Number(r.rating)!==Number(rating))return false;
+    if(prod!=='all'&&$('#reviewProductFilter').value===prod&&productLabel(r,pidx)!==prod)return false;
     return [r.id,r.reviewId,r.asin,r.brand,r.title,r.text].join(' ').toLowerCase().includes(search);
-  }).sort(($('#reviewSort')?.value||'priority')==='priority'?((a,b)=>(priorityScore(b)??-1)-(priorityScore(a)??-1)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))):((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))));
+  }).sort(($('#reviewSort')?.value)==='rating'?((a,b)=>(Number(a.rating)-Number(b.rating))||(priorityScore(b)??-1)-(priorityScore(a)??-1)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))):($('#reviewSort')?.value||'priority')==='priority'?((a,b)=>(priorityScore(b)??-1)-(priorityScore(a)??-1)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))):((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||''))));
 
   $('#reviewTableBody').innerHTML=list.map(r=>{
     const verdictCell=r.workflow_state==='blocked'?`<span class="tag neutral" title="${esc(r.block_detail||'')}">BLOCKED · ${esc(r.block_reason||'')}</span>`:r.verdict?`<span class="tag ${VERDICT_CLASS[r.verdict]}">${VERDICTS[r.verdict]}</span>${r.classification?`<span class="cell-sub">${r.classification.confidence}% · ${esc(customerRoute(r).label)}${priorityScore(r)!==null?` · Priority ${priorityScore(r)}`:''}</span>`:''}`:'<span class="tag neutral">Not analyzed</span>';
     const wfCell=`<span class="tag ${WORKFLOW_CLASS[r.workflow_state]||'neutral'}">${WORKFLOW_STATES[r.workflow_state]||r.workflow_state}</span>`;
-    return `<tr><td><input class="review-check" data-id="${r.id}" type="checkbox" ${selectedReviews.has(r.id)?'checked':''} aria-label="Select ${esc(r.id)}"></td><td><div class="cell-title" title="${esc(r.text)}">${esc(r.title||r.text)}</div><span class="cell-sub">${esc(r.reviewId||r.id)} · ${fmtDate(r.reviewDate)}</span></td><td><b>${esc(r.asin)}</b><span class="cell-sub">${esc(r.brand)} · ${esc(r.marketplace)}</span></td><td><span class="rating">${esc(r.rating)} ★</span></td><td>${verdictCell}</td><td>${wfCell}</td><td>${fmtDate(r.updatedAt)}</td><td><div class="row-actions"><button class="btn small secondary open-review" data-id="${r.id}">Open</button></div></td></tr>`;
+    return `<tr><td><input class="review-check" data-id="${r.id}" type="checkbox" ${selectedReviews.has(r.id)?'checked':''} aria-label="Select ${esc(r.id)}"></td><td><div class="cell-title" title="${esc(r.text)}">${esc(r.title||r.text)}</div><span class="cell-sub">${esc(r.reviewId||r.id)} · ${fmtDate(r.reviewDate)}</span></td><td><b>${esc(r.asin)}</b><span class="cell-sub">${esc(r.brand)} · ${esc(r.marketplace)}</span><span class="cell-sub" title="Product">${esc(productLabel(r,pidx))}</span></td><td><span class="rating">${esc(r.rating)} ★</span></td><td>${verdictCell}</td><td>${wfCell}</td><td>${fmtDate(r.updatedAt)}</td><td><div class="row-actions"><button class="btn small secondary open-review" data-id="${r.id}">Open</button></div></td></tr>`;
   }).join('');
   $('#reviewsEmpty').classList.toggle('hidden',list.length>0);
   $('#selectAllReviews').checked=list.length>0&&list.every(r=>selectedReviews.has(r.id));
@@ -814,6 +826,8 @@ const AMAZON_DOMAINS={US:'www.amazon.com',CA:'www.amazon.ca',MX:'www.amazon.com.
 const STAR_FILTER={1:'one_star',2:'two_star',3:'three_star',4:'four_star',5:'five_star'};
 function findOnAmazonUrl(r){return `https://${AMAZON_DOMAINS[r.marketplace]||AMAZON_DOMAINS.US}/product-reviews/${encodeURIComponent(r.asin)}/?sortBy=recent&filterByStar=${STAR_FILTER[r.rating]||'all_stars'}`}
 function guidelineBasis(r,p){if(!p)return '';const cs=p.caseStatement||'';return cs.includes('{bullet}')&&!r.classification?.bullet?`Amazon's Community Guidelines (${p.heading}) do not allow: ${p.guidance}`:cs.replace('{bullet}',r.classification?.bullet||'')}
+function productIndex(){const m=new Map();for(const a of state.asinCatalog){if(a.child&&a.productName&&!m.has(a.child))m.set(a.child,a.productName);if(a.parent&&a.productName&&!m.has(a.parent))m.set(a.parent,a.productName)}return m}
+function productLabel(r,idx){return (idx||productIndex()).get(r.asin)||'Unmapped ASIN'}
 function isCaseCandidate(r){return r.workflow_state!=='blocked'&&Boolean(r.classification?.policyId)&&['clear_violation','hold'].includes(r.verdict)}
 function ineligibleNote(r){
   const why=r.workflow_state==='blocked'?`Blocked at screening: ${esc(BLOCK_REASONS[r.block_reason]||r.block_reason)}${r.block_detail?` — ${esc(r.block_detail)}`:''}.`:!r.classification?'Not analysed yet — select Re-run analysis.':esc(r.classification.rationale||'No Community Guidelines rule is broken.');
@@ -1551,6 +1565,8 @@ $('#reviewSearch').oninput=renderReviews;
 $('#reviewStatusFilter').onchange=renderReviews;
 $('#reviewVerdictFilter').onchange=renderReviews;
 $('#reviewBrandFilter').onchange=renderReviews;
+$('#reviewRatingFilter').onchange=renderReviews;
+$('#reviewProductFilter').onchange=renderReviews;
 $('#reviewMarketplaceFilter').onchange=renderReviews;
 $('#caseSearch').oninput=renderCases;
 $('#caseStatusFilter').onchange=renderCases;

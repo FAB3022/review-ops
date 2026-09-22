@@ -8,7 +8,7 @@
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 77 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 81 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -173,7 +173,7 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (77) to the Command Center test suite.
+1. Port `qa/regression.js` scenarios (81) to the Command Center test suite.
 2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 12 CLEAR (all seller, order or shipping feedback), 21 HOLD (19 seller/order, 1 review before delivery, 1 pricing), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 

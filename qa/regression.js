@@ -185,6 +185,7 @@ const cal=await p.evaluate(()=>{const run=(rating,text,mp='US')=>{const c=classi
   localWalmart:run(2,'These are great sheets but not at these prices, go to your local Walmart.'),
   saleValue:run(3,'I purchased a king set on sale for $55. Too much maintenance.'),
   functionRemark:run(2,'Was missing parts. The chair does not function flawlessly due to this.'),
+  lateDays:run(2,'Arrived six days late.'),
   medicalQuote:policyById('POL-MEDICAL').caseStatement,
   hateQuote:policyById('POL-HATE').caseStatement}});
 console.log(JSON.stringify(cal));
@@ -195,6 +196,7 @@ ok(cal.offAmazon.startsWith('not_eligible')&&cal.contactOnBox.startsWith('not_el
 ok(cal.usedItem==='clear_violation:POL-SELLER'&&cal.emptyBoxFr==='clear_violation:POL-SELLER','used item and empty box (French) → CLEAR');
 ok(cal.localWalmart==='hold:POL-PRICING'&&cal.saleValue.startsWith('not_eligible'),'"go to your local Walmart" flagged; personal sale price is a value comment');
 ok(cal.functionRemark==='hold:POL-SELLER','missing parts plus a product remark → HOLD');
+ok(cal.lateDays==='clear_violation:POL-SELLER','"arrived six days late" → Shipping cost and speed');
 ok(!/This policy applies to all products\."/.test(cal.medicalQuote)&&/"We don't allow any statements or claims related to preventing or curing serious medical conditions or severe symptoms\."/.test(cal.medicalQuote),'Medical claims quote is verbatim');
 ok(/characteristics like:" race, ethnicity/.test(cal.hateQuote),'Hate speech quote keeps Amazon wording inside quotes only');
 // Drawer clarity + full-history scan + end-to-end case from a scanned candidate
@@ -229,6 +231,26 @@ console.log(JSON.stringify(va));
 ok(va.verdict==='clear_violation'&&va.evidence==='Missing a pillow case from the order','evidence is the exact sentence (title not merged into the quote)');
 ok(va.find,'"Find on Amazon" opens the product reviews filtered to the review\'s star rating');
 ok(va.rule&&va.links,'review screen shows Amazon\'s exact rule and the policy links for the validator');
+
+// Review queue filters: rating and product; lowest-rating sort
+const fl=await p.evaluate(()=>{state.reviews=[];state.asinCatalog.push({brand:'DECOLURE',parent:'B0PARENT01',child:'B0CHILD001',sku:'X',marketplace:'US',productName:'DECOLURE BAMBOO SHEET 4PCS'});
+ const add=(asin,rating,text)=>{const r={id:nextReviewId(),asin,brand:'DECOLURE',marketplace:'US',rating,title:'t',text,reviewDate:today(),collectedAt:now(),updatedAt:now(),validation:{},approvals:{ab:null,brandManager:null}};state.reviews.push(r);analyzeReview(r)};
+ add('B0CHILD001',1,'Stopped working fast.');add('B0CHILD001',5,'Great.');add('B0CHILD001',2,'Thin fabric.');add('B0UNKNOWN1',3,'Okay.');saveState();navigate('reviews');
+ const rows=()=>$$('#reviewTableBody tr').length;
+ const all=rows();
+ $('#reviewRatingFilter').value='neg';renderReviews();const neg=rows();
+ $('#reviewRatingFilter').value='5';renderReviews();const five=rows();
+ $('#reviewRatingFilter').value='all';$('#reviewProductFilter').value='DECOLURE BAMBOO SHEET 4PCS';renderReviews();const prod=rows();
+ const opts=[...$('#reviewProductFilter').options].map(o=>o.textContent);
+ $('#reviewProductFilter').value='all';$('#reviewSort').value='rating';renderReviews();
+ const firstRating=$('#reviewTableBody tr .rating')?.textContent;
+ const showsProduct=$('#reviewTableBody').innerHTML.includes('DECOLURE BAMBOO SHEET 4PCS');
+ $('#reviewSort').value='priority';renderReviews();
+ return {all,neg,five,prod,opts,firstRating,showsProduct}});
+console.log(JSON.stringify(fl));
+ok(fl.all===4&&fl.neg===3&&fl.five===1,'rating filter: all / 1–3★ / exact star');
+ok(fl.prod===3&&fl.opts.some(o=>o.startsWith('DECOLURE BAMBOO SHEET 4PCS (3)'))&&fl.opts.some(o=>o.startsWith('Unmapped ASIN')),'product filter lists catalogue products with counts and filters rows');
+ok(fl.firstRating&&fl.firstRating.startsWith('1')&&fl.showsProduct,'lowest-rating sort; product name shown under the ASIN');
 
 ok(errs.length===0,'no page errors '+errs.join('|'));
 console.log(`\n${pass} passed, ${fail} failed`);await b.close();srv.close()})();
