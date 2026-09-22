@@ -2,13 +2,13 @@
 
 **For:** Joseph (Command Center build)
 **Status:** logic is final and tested in the standalone dashboard (v5.2). It needs a home with shared data, logins and scheduled jobs, which is the Command Center.
-**Proposal of record:** `NRR_Proposal_v2.4_for_Erik.docx` (Erik has confirmed: internal-only, no MajestIQ).
+**Proposal of record:** `NRR_Proposal_v2.6_for_Erik.docx` (Erik has confirmed: internal-only, no MajestIQ).
 
 | | |
 |---|---|
 | Live reference app | https://fab3022.github.io/review-ops/ |
 | Source | `index.html` in this repo (single file: HTML, CSS and JS) |
-| Tests | `qa/regression.js`: 74 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
+| Tests | `qa/regression.js`: 77 checks, run with `npm i playwright-core && node qa/regression.js index.html` |
 
 The reference app runs entirely in the browser (`localStorage`). Treat it as the **specification**, not the production system. Port the logic below. Do not embed the page.
 
@@ -57,7 +57,8 @@ If there is no review ID but the link matches `/customer-reviews\/(R[A-Z0-9]{8,}
 ### 2.3 Classifier (`classifyReview`)
 **Source of truth:** Amazon's Community Guidelines, "What's not allowed" (amazon.com, read 21 Sep 2026, PDF in the project folder), plus the Seller Central pages *Customer product reviews policies* (GYRKB5RU3FS5TURN) and *Answers to questions about reviews* (201972160). Every case quotes Amazon's own words. An independent check confirmed every quoted string is verbatim.
 
-Default verdict is **NOT ELIGIBLE**. Text = `title + " " + text`. Matching runs on a copy with straight apostrophes, so phone-typed `’` still matches; evidence is quoted from the original text.
+Default verdict is **NOT ELIGIBLE**. Text = `title + "
+" + text` (the line break keeps the evidence quote to one real sentence). Matching runs on a copy with straight apostrophes, so phone-typed `’` still matches; evidence is quoted from the original text.
 
 1. **Rating 4–5 → NOT ELIGIBLE**, never a candidate.
 2. **Safeguard 1 (`SELLER_REVIEW_CONTACT`) → NOT ELIGIBLE, never report:** the review mentions our team offering a refund, gift, discount or anything else in connection with a review, or asking the buyer to change or remove it. Amazon lists these as *seller* violations.
@@ -172,7 +173,7 @@ Validation needed · approval needed (to the brand's BM) · case ready to submit
 ---
 
 ## 6. Acceptance
-1. Port `qa/regression.js` scenarios (74) to the Command Center test suite.
+1. Port `qa/regression.js` scenarios (77) to the Command Center test suite.
 2. **Baseline:** a full Master File run on 21 Sep 2026 must reproduce **4,867 reviews, 765 rated 1–3★, 12 CLEAR (all seller, order or shipping feedback), 21 HOLD (19 seller/order, 1 review before delivery, 1 pricing), 47 PROTECTED_ASIN**. Differences mean the rules drifted.
 3. Walk the 10-review test set (`seedTestReviews`) end to end with a real AB and a real BM account.
 
